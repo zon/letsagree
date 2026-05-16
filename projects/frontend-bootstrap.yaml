@@ -137,3 +137,4 @@ requirements:
     version: minor
     items:
       - VERSION file at the repo root is incremented by a minor semver bump
+    passing: true

@@ -26,16 +26,16 @@ describe("entry-point items", () => {
   test("VERSION file is read from the repo root and trimmed of whitespace", () => {
     const versionPath = join("/workspace/repo", "VERSION")
     const version = readFileSync(versionPath, "utf-8").trim()
-    expect(version).toBe("0.2.0")
+    expect(version).toBe("0.3.0")
     expect(version).not.toContain("\n")
     expect(version).not.toContain(" ")
   })
 
   test("GET /about route calls aboutPage with a fetchBackendVersion closure and the version string", () => {
     const testClosure = async () => "1.2.3"
-    const testVersion = "0.2.0"
+    const testVersion = "0.3.0"
 
     expect(typeof testClosure).toBe("function")
-    expect(testVersion).toBe("0.2.0")
+    expect(testVersion).toBe("0.3.0")
   })
 })
