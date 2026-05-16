@@ -1,7 +1,7 @@
 [build]
-  cmd = "go build -o ./cmd/server/server ./cmd/server"
-  entrypoint = ["./cmd/server/server"]
-  full_bin = "ADDR=:8080 ./cmd/server/server"
+  cmd = "go build -o ./bin/server ./cmd/server"
+  entrypoint = ["./bin/server"]
+  full_bin = "ADDR=:8080 ./bin/server"
   exclude_dir = ["tmp", "vendor", "frontend"]
   delay = 100
 

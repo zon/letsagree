@@ -1,3 +1,14 @@
 workflow:
   namespace: ralph-letsagree
 model: minimax/MiniMax-M2.7
+
+before:
+  - name: compile
+    command: just
+    args: [build-backend]
+
+services:
+  - name: backend
+    command: just
+    args: [backend]
+    port: 8080
