@@ -1,27 +1,9 @@
-root = "."
-tmp_dir = "tmp"
-
 [build]
-  bin = "./cmd/server/server"
   cmd = "go build -o ./cmd/server/server ./cmd/server"
+  entrypoint = ["./cmd/server/server"]
   full_bin = "ADDR=:8080 ./cmd/server/server"
-  include_ext = ["go", "tpl", "tmpl", "html"]
   exclude_dir = ["tmp", "vendor", "frontend"]
-  exclude_regex = ["_test\\.go"]
-  exclude_unchanged = false
-  follow_symlink = false
   delay = 100
-  kill_timeout = "5s"
-  send_interrupt = false
-  count = 0
-
-[run]
-  log = "tmp/air.log"
-  poll = false
-  poll_interval = 100
-  use_polling = false
-  interval = 0
 
 [misc]
   clean_on_exit = true
-  close_notify = false
