@@ -1,6 +1,7 @@
 slug: frontend-bootstrap
 title: Implement frontend bootstrap
 feature: frontend/bootstrap
+passing: true
 
 requirements:
   - slug: project-setup
