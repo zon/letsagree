@@ -5,6 +5,11 @@
 **Task Runner:** [just](https://github.com/casey/just)
 - Used to run common development processes via a `justfile`
 
+## Containers
+
+**Container Engine:** [Podman](https://podman.io)
+- Used to build and push container images
+
 ## Backend
 
 **Language:** Go
