@@ -1,41 +1,29 @@
-//go:build !test
-
 package main
 
 import (
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/alecthomas/kong"
 	"github.com/gin-gonic/gin"
 )
 
 var version = "dev"
 
-func flagAddr() string {
-	if os.Getenv("TEST_SUBPROCESS") == "1" {
-		return os.Getenv("TEST_ADDR")
-	}
-	addr := ":8080"
-	for i := 1; i < len(os.Args)-1; i++ {
-		if os.Args[i] == "--addr" {
-			addr = os.Args[i+1]
-			break
-		}
-	}
-	return addr
+var cli struct {
+	Addr string `name:"addr" default:":8080" help:"HTTP listen address."`
 }
 
 func main() {
-	addr := flagAddr()
+	kong.Parse(&cli)
 
 	r := gin.Default()
 	r.GET("/version", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"version": version})
 	})
 
-	log.Printf("starting server on %s", addr)
-	if err := r.Run(addr); err != nil {
+	log.Printf("starting server on %s", cli.Addr)
+	if err := r.Run(cli.Addr); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }

@@ -2,7 +2,10 @@ module server
 
 go 1.26.0
 
-require github.com/gin-gonic/gin v1.12.0
+require (
+	github.com/alecthomas/kong v1.15.0
+	github.com/gin-gonic/gin v1.12.0
+)
 
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
