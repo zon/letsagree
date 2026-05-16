@@ -68,6 +68,7 @@ requirements:
       - page displays the backendVersion string when it is not null
       - page displays an unavailable indicator when backendVersion is null
       - page is styled with Tailwind CSS
+    passing: true
 
   - slug: orchestration
     description: >
