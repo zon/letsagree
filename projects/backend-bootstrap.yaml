@@ -5,7 +5,7 @@ feature: specs/features/backend/bootstrap
 requirements:
   - slug: version-file
     description: Create the VERSION file at the repo root with an initial semver string.
-    passing: false
+    passing: true
     items:
       - Create `VERSION` at the repo root containing `0.1.0`
 
