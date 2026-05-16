@@ -13,6 +13,7 @@ requirements:
     items:
       - frontend/package.json exists with elysia, elysia-livereload, typebox, htmx, and tailwindcss dependencies
       - package.json includes a watch script that starts the Elysia server with live reload
+    passing: true
 
   - slug: entry-point
     description: >
