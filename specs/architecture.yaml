@@ -2,11 +2,4 @@ modules:
   - path: cmd/server
     description: >
       Entry point for the backend HTTP server. Initialises the Gin engine,
-      registers routes, and starts listening. Receives the embedded version
-      via build-time ldflags.
-
-  - path: internal/version
-    orchestration: true
-    description: >
-      Holds the build-time embedded version string and the GET /version
-      route handler that returns it as a bare JSON string.
+      registers routes, and starts listening.

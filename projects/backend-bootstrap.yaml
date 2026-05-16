@@ -1,0 +1,28 @@
+slug: backend-bootstrap
+title: Add VERSION file, justfile, /version endpoint, and air dev server
+feature: specs/features/backend/bootstrap
+
+requirements:
+  - slug: version-file
+    description: Create the VERSION file at the repo root with an initial semver string.
+    passing: false
+    items:
+      - Create `VERSION` at the repo root containing `0.1.0`
+
+  - slug: server-entry
+    description: >
+      Create the server entry point that embeds the version via ldflags, registers
+      the /version route, and starts listening.
+    passing: false
+    items:
+      - Create `cmd/server/main.go` with a `main` function that initialises a Gin engine,
+        registers `GET /version`, and starts the HTTP server
+      - Embed the version string via ldflags into a package-level `version` variable
+
+  - slug: air-dev
+    description: >
+      Configure air and add a `just dev` recipe to host the backend locally with live reload.
+    passing: false
+    items:
+      - Add an `.air.toml` configuration file targeting `cmd/server`
+      - Add a `backend` recipe to the `justfile` that runs `air`
