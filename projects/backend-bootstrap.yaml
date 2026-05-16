@@ -26,3 +26,19 @@ requirements:
     items:
       - Add an `.air.toml` configuration file targeting `cmd/server`
       - Add a `backend` recipe to the `justfile` that runs `air`
+
+  - slug: kong-args
+    description: >
+      Add Kong CLI argument parsing to the backend so the listen address is
+      configurable via --addr (default :8080).
+    scenarios:
+      - title: --addr flag overrides listen address
+        items:
+          - GIVEN the backend is started with --addr :9090
+          - WHEN a client sends GET /version to port 9090
+          - THEN the response status is 200 OK
+      - title: --addr defaults to :8080
+        items:
+          - GIVEN the backend is started with no --addr flag
+          - THEN the server listens on :8080
+    passing: false
