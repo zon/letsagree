@@ -1,0 +1,90 @@
+slug: backend-versioning
+title: Add VERSION file, just build command, and /version endpoint
+feature: specs/features/backend/versioning
+
+requirements:
+  - slug: version-file
+    description: Create the VERSION file at the repo root with an initial semver string.
+    passing: false
+    items:
+      - Create `VERSION` at the repo root containing `0.1.0`
+
+  - slug: just-build
+    description: >
+      Add a `justfile` with a `build` recipe that reads the VERSION file and passes
+      the version to the Go compiler at compile time via -ldflags.
+    passing: false
+    items:
+      - Create a `justfile` at the repo root
+      - Add a `build` recipe that reads `VERSION` and runs `go build` on `cmd/server`
+        with `-ldflags "-X internal/version.Version=<value>"`, outputting a binary named `server`
+      - If the `VERSION` file is absent or contains a non-semver string, the recipe must fail with a descriptive error
+
+  - slug: version-module
+    description: >
+      Implement the internal/version package with a build-time embedded Version variable
+      and a Gin handler that returns it as a bare JSON string.
+    passing: false
+    code:
+      - name: Version
+        description: Package-level string variable injected at compile time via -ldflags.
+        module: internal/version/version.go
+        body: |
+          var Version string
+      - name: HandleGetVersion
+        description: Gin handler that returns the embedded Version as a bare JSON string with 200 OK.
+        module: internal/version/version.go
+        body: |
+          func HandleGetVersion(c *gin.Context) {
+            c.JSON(http.StatusOK, Version)
+          }
+
+  - slug: server-entry
+    description: >
+      Create the server entry point that sets up Gin, registers the /version route,
+      and starts listening.
+    passing: false
+    items:
+      - Create `cmd/server/main.go` with a `main` function that initialises a Gin engine,
+        registers `GET /version` to `version.HandleGetVersion`, and starts the HTTP server
+
+  - slug: version-test-helper
+    description: Shared test helper that creates a Gin engine with the version route and performs a GET request.
+    passing: false
+    tests:
+      - name: performGet
+        description: Creates a Gin test engine with the /version route registered and returns the recorded response for a GET to the given path.
+        module: internal/version/version_test.go
+        body: |
+          func performGet(path string) *httptest.ResponseRecorder {
+            r := gin.New()
+            r.GET("/version", HandleGetVersion)
+            w := httptest.NewRecorder()
+            req := httptest.NewRequest(http.MethodGet, path, nil)
+            r.ServeHTTP(w, req)
+            return w
+          }
+
+  - slug: version-tests
+    description: Test that GET /version returns 200 with the embedded version as a bare JSON string and the correct content type.
+    passing: false
+    tests:
+      - name: TestHandleGetVersion_returnsEmbeddedVersion
+        description: Set Version to "1.2.3"; GET /version responds 200 with body "1.2.3".
+        module: internal/version/version_test.go
+        body: |
+          func TestHandleGetVersion_returnsEmbeddedVersion(t *testing.T) {
+            Version = "1.2.3"
+            w := performGet("/version")
+            assert.Equal(t, http.StatusOK, w.Code)
+            assert.Equal(t, `"1.2.3"`, w.Body.String())
+          }
+      - name: TestHandleGetVersion_usesJSONContentType
+        description: GET /version response has Content-Type application/json.
+        module: internal/version/version_test.go
+        body: |
+          func TestHandleGetVersion_usesJSONContentType(t *testing.T) {
+            Version = "1.2.3"
+            w := performGet("/version")
+            assert.Contains(t, w.Header().Get("Content-Type"), "application/json")
+          }
