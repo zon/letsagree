@@ -22,7 +22,7 @@ requirements:
   - slug: air-dev
     description: >
       Configure air and add a `just dev` recipe to host the backend locally with live reload.
-    passing: false
+    passing: true
     items:
       - Add an `.air.toml` configuration file targeting `cmd/server`
       - Add a `backend` recipe to the `justfile` that runs `air`
