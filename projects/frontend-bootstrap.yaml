@@ -53,6 +53,7 @@ requirements:
     items:
       - fetchBackendVersion(backendUrl) fetches GET <backendUrl>/version and returns the version string
       - returns null on network error or non-OK response
+    passing: true
 
   - slug: render
     description: >
