@@ -43,6 +43,7 @@ requirements:
           - GIVEN the frontend is started with --backend http://localhost:9090
           - WHEN the about page is requested
           - THEN the frontend fetches the backend version from http://localhost:9090/version
+    passing: true
 
   - slug: backend-client
     description: >

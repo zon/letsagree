@@ -22,6 +22,10 @@ const app = new Elysia().get("/about", async () => {
   )
 })
 
-app.listen(values.addr as string, () => {
-  console.log(`Frontend listening on ${values.addr}`)
+const addrValue = values.addr as string
+const portMatch = addrValue.match(/^:?(\d+)$/)
+const port = portMatch ? parseInt(portMatch[1], 10) : 3000
+
+app.listen(port, () => {
+  console.log(`Frontend listening on ${addrValue}`)
 })
