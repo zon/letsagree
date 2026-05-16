@@ -87,6 +87,7 @@ requirements:
             const backendVersion = await fetchBackendVersion()
             return renderAbout(frontendVersion, backendVersion)
           }
+    passing: true
 
   - slug: tests
     description: >
