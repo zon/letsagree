@@ -17,7 +17,7 @@ requirements:
 
   - slug: push-backend
     description: Add just push-backend recipe that builds the image, tags with VERSION and latest, and pushes both to ghcr.io
-    passing: false
+    passing: true
     scenarios:
       - title: push-backend tags with VERSION
         items:
