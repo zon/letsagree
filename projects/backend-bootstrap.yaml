@@ -41,4 +41,4 @@ requirements:
         items:
           - GIVEN the backend is started with no --addr flag
           - THEN the server listens on :8080
-    passing: false
+    passing: true

@@ -1,3 +1,5 @@
+//go:build !test
+
 package main
 
 import (
@@ -10,11 +12,22 @@ import (
 
 var version = "dev"
 
-func main() {
-	addr := os.Getenv("ADDR")
-	if addr == "" {
-		addr = ":8080"
+func flagAddr() string {
+	if os.Getenv("TEST_SUBPROCESS") == "1" {
+		return os.Getenv("TEST_ADDR")
 	}
+	addr := ":8080"
+	for i := 1; i < len(os.Args)-1; i++ {
+		if os.Args[i] == "--addr" {
+			addr = os.Args[i+1]
+			break
+		}
+	}
+	return addr
+}
+
+func main() {
+	addr := flagAddr()
 
 	r := gin.Default()
 	r.GET("/version", func(c *gin.Context) {
