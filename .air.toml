@@ -1,0 +1,9 @@
+[build]
+  cmd = "go build -o ./cmd/server/server ./cmd/server"
+  entrypoint = ["./cmd/server/server"]
+  full_bin = "ADDR=:8080 ./cmd/server/server"
+  exclude_dir = ["tmp", "vendor", "frontend"]
+  delay = 100
+
+[misc]
+  clean_on_exit = true
