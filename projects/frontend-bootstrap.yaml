@@ -132,6 +132,7 @@ requirements:
             assertContainsFrontendVersion(html, "1.0.0")
             assertBackendVersionUnavailable(html)
           })
+    passing: true
 
   - slug: version
     description: Bump version for new frontend feature
