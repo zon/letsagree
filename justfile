@@ -5,7 +5,10 @@ dev:
   just backend
 
 backend:
-  air
+  cd backend && air
+
+frontend:
+  cd frontend && bun watch
 
 build-backend:
-  go build -o bin/server ./cmd/server
+  cd backend && go build -o bin/server ./cmd/server

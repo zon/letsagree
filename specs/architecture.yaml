@@ -1,5 +1,23 @@
 modules:
-  - path: cmd/server
+  - path: backend/cmd/server
     description: >
       Entry point for the backend HTTP server. Initialises the Gin engine,
       registers routes, and starts listening.
+  - path: frontend/src/index.ts
+    description: >
+      Entry point for the frontend server. Parses CLI args, reads the VERSION
+      file, mounts Elysia routes, and starts listening.
+  - path: frontend/src/orchestration.ts
+    orchestration: true
+    description: >
+      General-purpose orchestration module for all frontend route handlers.
+      Coordinates between the backend client and render modules to produce
+      page responses.
+  - path: frontend/src/backend.ts
+    description: >
+      Backend HTTP client. Fetches data from backend API endpoints and returns
+      domain values; returns null for unavailable resources.
+  - path: frontend/src/render.ts
+    description: >
+      HTML page rendering. Accepts domain values and returns HTML strings with
+      Tailwind CSS styling.
