@@ -5,7 +5,7 @@ feature: specs/features/backend/publish
 requirements:
   - slug: containerfile
     description: Add backend/Containerfile that builds the backend binary and produces a runnable image
-    passing: false
+    passing: true
     scenarios:
       - title: container image runs the backend
         items:
