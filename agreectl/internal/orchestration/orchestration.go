@@ -45,19 +45,24 @@ func WithMocks(overrides ...any) *Orchestration {
 	return New(k8s, cw)
 }
 
-type stubK8sClient struct {
-	secret  *cluster.Secret
-	nodeIP  string
-	nodeErr error
-	secErr  error
+type StubK8sClient struct {
+	Secret     *cluster.Secret
+	RetNodeIP  string
+	NodeErr    error
+	Calls      struct {
+		Namespace string
+		Secret    string
+	}
 }
 
-func (s *stubK8sClient) GetSecret(namespace, name string) (*cluster.Secret, error) {
-	return s.secret, s.secErr
+func (s *StubK8sClient) GetSecret(namespace, name string) (*cluster.Secret, error) {
+	s.Calls.Namespace = namespace
+	s.Calls.Secret = name
+	return s.Secret, s.NodeErr
 }
 
-func (s *stubK8sClient) NodeIP() (string, error) {
-	return s.nodeIP, s.nodeErr
+func (s *StubK8sClient) NodeIP() (string, error) {
+	return s.RetNodeIP, s.NodeErr
 }
 
 func (o *Orchestration) Postgres(in opts.Opts) error {

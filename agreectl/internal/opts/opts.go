@@ -34,3 +34,21 @@ func WithPort(port int) Opts {
 	o.Port = port
 	return o
 }
+
+func WithContext(context string) Opts {
+	o := defaultOpts
+	o.Context = context
+	return o
+}
+
+func WithNamespace(namespace string) Opts {
+	o := defaultOpts
+	o.Namespace = namespace
+	return o
+}
+
+func WithDBSecret(secret string) Opts {
+	o := defaultOpts
+	o.DBSecret = secret
+	return o
+}

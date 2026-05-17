@@ -152,4 +152,4 @@ requirements:
       - Create agreectl/cmd/agreectl/main.go as a Kong CLI with a set config subcommand
       - Flags — --context (default microk8s), --namespace (default letsagree), --db-secret (default letsagree-app), --host (optional), --port (default 30432)
       - Construct a K8sClient using the --context flag value and a real ConfigWriter, wire both into an Orchestration, and call Postgres with an opts.Opts populated from the flags
-    passing: false
+    passing: true
