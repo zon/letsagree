@@ -1,0 +1,25 @@
+modules:
+  - path: agreectl/cmd/agreectl
+    description: >
+      Entry point for the agreectl CLI. Parses commands and flags via Kong and
+      wires dependencies into the orchestration.
+
+  - path: agreectl/internal/orchestration
+    orchestration: true
+    description: >
+      General-purpose orchestration module for all agreectl commands. Coordinates
+      between the cluster client and file writer to produce local config files.
+
+  - path: agreectl/internal/opts
+    description: >
+      Shared input types for agreectl commands. Defines the Opts structs passed
+      from the CLI entry point into the orchestration.
+  - path: agreectl/internal/cluster
+    description: >
+      Kubernetes client. Fetches secrets and node information from the cluster
+      using the kubeconfig context specified by the caller.
+
+  - path: agreectl/internal/files
+    description: >
+      Config file writer. Marshals structs as JSON and writes them to disk,
+      creating parent directories as needed. Exports output path constants.

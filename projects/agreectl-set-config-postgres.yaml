@@ -1,0 +1,155 @@
+slug: agreectl-set-config-postgres
+title: agreectl set config — write backend postgres config from Kubernetes secret
+
+feature: specs/features/agreectl/set-config-postgres
+
+requirements:
+  - slug: opts-struct
+    description: Define the Opts struct shared between the CLI entry point and orchestration
+    items:
+      - Define Opts in agreectl/internal/opts with fields Context, Namespace, DBSecret, Host, and Port
+    passing: false
+
+  - slug: k8s-client
+    description: Kubernetes client that fetches secrets and node IPs using a kubeconfig context
+    items:
+      - Define K8sClient interface in agreectl/internal/cluster with GetSecret(namespace, name string) and NodeIP() methods
+      - Implement using k8s.io/client-go; load the kubeconfig from the default path (~/.kube/config) with the context specified at construction time
+      - Secret.Data fields from client-go are already decoded bytes — no base64 decoding needed
+      - The Secret type must expose User(), Password(), and DBName() methods reading from the Data map keys "user", "password", and "dbname"
+      - NodeIP() lists cluster nodes and returns the InternalIP address type of the first ready node
+    passing: false
+
+  - slug: config-writer
+    description: File writer that marshals structs as JSON and writes them to disk
+    scenarios:
+      - title: output directory is created if missing
+        items:
+          - GIVEN backend/config/ does not exist
+          - WHEN agreectl set config is run
+          - THEN backend/config/ is created
+          - AND backend/config/postgres.json is written successfully
+    items:
+      - Define ConfigWriter interface in agreectl/internal/files with WriteJSON(path string, v any) error
+      - Define PostgresConfig struct in agreectl/internal/files with fields host, port, user, password, dbname (json tagged)
+      - Define PostgresConfigPath constant in agreectl/internal/files with value "backend/config/postgres.json"
+      - The real ConfigWriter implementation must create parent directories if they do not exist before writing
+    passing: false
+
+  - slug: postgres-orchestration
+    description: Orchestration for fetching the CNPG secret and writing the postgres config
+    scenarios:
+      - title: writes postgres config with auto-detected host
+        items:
+          - GIVEN a running cluster accessible via context microk8s
+          - AND the secret letsagree-app exists in namespace letsagree
+          - AND the first cluster node has InternalIP 192.168.1.10
+          - WHEN agreectl set config is run with no flags
+          - THEN backend/config/postgres.json is written with host 192.168.1.10, port 30432, user app, dbname app
+      - title: --host overrides auto-detection
+        items:
+          - GIVEN agreectl set config is run with --host localhost
+          - THEN the host field in backend/config/postgres.json is "localhost"
+          - AND the node list is not queried
+      - title: --port overrides the default NodePort
+        items:
+          - GIVEN agreectl set config is run with --port 31000
+          - THEN the port field in backend/config/postgres.json is 31000
+    code:
+      - name: Postgres
+        description: Fetches the CNPG secret, resolves the external host, and writes backend/config/postgres.json
+        module: agreectl/internal/orchestration
+        body: |
+          type Orchestration struct {
+            cluster K8sClient
+            files   ConfigWriter
+          }
+
+          func (o *Orchestration) Postgres(in opts.Opts) error {
+            secret, err := o.cluster.GetSecret(in.Namespace, in.DBSecret)
+            if err != nil {
+              return err
+            }
+
+            host := in.Host
+            if host == "" {
+              host, err = o.cluster.NodeIP()
+              if err != nil {
+                return err
+              }
+            }
+
+            return o.files.WriteJSON(files.PostgresConfigPath, files.PostgresConfig{
+              Host:     host,
+              Port:     in.Port,
+              User:     secret.User(),
+              Password: secret.Password(),
+              DBName:   secret.DBName(),
+            })
+          }
+    passing: false
+
+  - slug: postgres-tests
+    description: Tests for the Postgres orchestration method
+    items:
+      - Implement orchestration.WithMocks(overrides ...any) to construct an Orchestration with stub K8sClient and ConfigWriter; accept optional overrides for either dependency
+      - Implement cluster test helpers (AnyNodeIP, WithNodeIP, ThatFailsOnNodeIP, AnySecret, WithSecret) in agreectl/internal/cluster
+      - Implement files.WrittenAt(t, path, out) in agreectl/internal/files to unmarshal the JSON captured by the ConfigWriter stub
+      - Implement opts test fixtures (Any, WithHost, AnyPort, WithPort) in agreectl/internal/opts
+    tests:
+      - name: TestPostgres_autoDetectsNodeIP
+        description: verifies node IP is auto-detected and used as host when --host is not set
+        module: agreectl/internal/orchestration
+        body: |
+          func TestPostgres_autoDetectsNodeIP(t *testing.T) {
+            ip := cluster.AnyNodeIP()
+            svc := orchestration.WithMocks(cluster.WithNodeIP(ip))
+            require.NoError(t, svc.Postgres(opts.Any()))
+            assert.Equal(t, ip, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
+          }
+      - name: TestPostgres_usesProvidedHost
+        description: verifies the provided host is used and NodeIP is not queried
+        module: agreectl/internal/orchestration
+        body: |
+          func TestPostgres_usesProvidedHost(t *testing.T) {
+            svc := orchestration.WithMocks(cluster.ThatFailsOnNodeIP())
+            require.NoError(t, svc.Postgres(opts.WithHost("localhost")))
+            assert.Equal(t, "localhost", files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
+          }
+      - name: TestPostgres_copiesSecretFields
+        description: verifies user, password, and dbname are copied from the secret unchanged
+        module: agreectl/internal/orchestration
+        body: |
+          func TestPostgres_copiesSecretFields(t *testing.T) {
+            s := cluster.AnySecret()
+            svc := orchestration.WithMocks(cluster.WithSecret(s))
+            require.NoError(t, svc.Postgres(opts.Any()))
+            cfg := files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{})
+            assert.Equal(t, s.User(), cfg.User)
+            assert.Equal(t, s.Password(), cfg.Password)
+            assert.Equal(t, s.DBName(), cfg.DBName)
+          }
+      - name: TestPostgres_usesOptsPort
+        description: verifies the port from opts is written to the config
+        module: agreectl/internal/orchestration
+        body: |
+          func TestPostgres_usesOptsPort(t *testing.T) {
+            port := opts.AnyPort()
+            svc := orchestration.WithMocks()
+            require.NoError(t, svc.Postgres(opts.WithPort(port)))
+            assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
+          }
+    passing: false
+
+  - slug: cli-entry-point
+    description: agreectl CLI entry point wiring Kong flags into the orchestration
+    scenarios:
+      - title: custom context, namespace, and secret
+        items:
+          - GIVEN agreectl set config is run with --context k3s-prod --namespace myns --db-secret myns-app
+          - THEN the secret myns-app is fetched from namespace myns using context k3s-prod
+    items:
+      - Create agreectl/cmd/agreectl/main.go as a Kong CLI with a set config subcommand
+      - Flags — --context (default microk8s), --namespace (default letsagree), --db-secret (default letsagree-app), --host (optional), --port (default 30432)
+      - Construct a K8sClient using the --context flag value and a real ConfigWriter, wire both into an Orchestration, and call Postgres with an opts.Opts populated from the flags
+    passing: false
