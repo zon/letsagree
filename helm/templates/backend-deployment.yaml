@@ -1,20 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: letsagree-backend
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-backend
   labels:
     {{- include "letsagree.labels" . | nindent 4 }}
-    app: letsagree-backend
+    app: {{ .Release.Name }}-backend
 spec:
   replicas: {{ .Values.backend.replicas }}
   selector:
     matchLabels:
-      app: letsagree-backend
+      app: {{ .Release.Name }}-backend
   template:
     metadata:
       labels:
-        app: letsagree-backend
+        app: {{ .Release.Name }}-backend
     spec:
       containers:
         - name: backend

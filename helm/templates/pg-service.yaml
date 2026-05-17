@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-pg
+  labels:
+    {{- include "letsagree.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  selector:
+    cnpg.io/cluster: {{ .Release.Name }}
+    role: primary
+  ports:
+    - port: 5432
+      targetPort: 5432
+      nodePort: {{ .Values.postgres.nodePort }}

@@ -1,3 +1,13 @@
+postgres:
+  instances: 1
+  image: ghcr.io/cloudnative-pg/postgresql:18
+  storage:
+    size: 1Gi
+  nodePort: 30432
+  database:
+    name: letsagree
+    owner: app
+
 backend:
   image: ghcr.io/zon/letsagree-backend
   port: 8080

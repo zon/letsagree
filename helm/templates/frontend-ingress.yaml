@@ -1,8 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: letsagree-frontend
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-frontend
   labels:
     {{- include "letsagree.labels" . | nindent 4 }}
   annotations:
@@ -17,7 +16,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: letsagree-frontend
+                name: {{ .Release.Name }}-frontend
                 port:
                   name: http
   tls:

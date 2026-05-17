@@ -1,20 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: letsagree-frontend
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Release.Name }}-frontend
   labels:
     {{- include "letsagree.labels" . | nindent 4 }}
-    app: letsagree-frontend
+    app: {{ .Release.Name }}-frontend
 spec:
   replicas: {{ .Values.frontend.replicas }}
   selector:
     matchLabels:
-      app: letsagree-frontend
+      app: {{ .Release.Name }}-frontend
   template:
     metadata:
       labels:
-        app: letsagree-frontend
+        app: {{ .Release.Name }}-frontend
     spec:
       containers:
         - name: frontend

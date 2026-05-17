@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "letsagree.labels" . | nindent 4 }}
+spec:
+  name: {{ .Values.postgres.database.name }}
+  owner: {{ .Values.postgres.database.owner }}
+  cluster:
+    name: {{ .Release.Name }}
