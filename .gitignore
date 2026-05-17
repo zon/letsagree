@@ -1,2 +1,4 @@
 backend/bin/
+backend/server
+backend/config/
 frontend/node_modules/
