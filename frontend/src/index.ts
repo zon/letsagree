@@ -13,10 +13,11 @@ const { values } = parseArgs({
 const frontendVersion = process.env.VERSION ?? "dev"
 
 const app = new Elysia().get("/about", async () => {
-  return aboutPage(
+  const html = await aboutPage(
     () => fetchBackendVersion(values.backend as string),
     frontendVersion,
   )
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } })
 })
 
 const addrValue = values.addr as string

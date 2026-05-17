@@ -19,7 +19,7 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"version": version})
+		c.String(http.StatusOK, version)
 	})
 
 	log.Printf("starting server on %s", cli.Addr)
