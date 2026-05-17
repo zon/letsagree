@@ -10,6 +10,9 @@ backend:
 frontend:
   cd frontend && bun watch
 
+install:
+  cd agreectl && go install ./cmd/agreectl
+
 build-backend:
   cd backend && go build -o bin/server ./cmd/server
 

@@ -11,7 +11,11 @@ import (
 )
 
 var cli struct {
-	Set SetConfig `cmd:"" help:"Write backend configuration from Kubernetes."`
+	Set SetCmd `cmd:"" help:"Write backend configuration from Kubernetes."`
+}
+
+type SetCmd struct {
+	Config SetConfig `cmd:"" help:"Write backend configuration from Kubernetes."`
 }
 
 type SetConfig struct {
