@@ -1,0 +1,17 @@
+backend:
+  image: ghcr.io/zon/letsagree-backend
+  port: 8080
+  replicas: 1
+  ingress:
+    host: api.letsagree.win
+    clusterIssuer: lets-encrypt
+    ingressClassName: public
+
+frontend:
+  image: ghcr.io/zon/letsagree-frontend
+  port: 3000
+  replicas: 1
+  ingress:
+    host: letsagree.win
+    clusterIssuer: lets-encrypt
+    ingressClassName: public

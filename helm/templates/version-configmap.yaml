@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: letsagree-version
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "letsagree.labels" . | nindent 4 }}
+data:
+  VERSION: {{ .Chart.AppVersion | quote }}

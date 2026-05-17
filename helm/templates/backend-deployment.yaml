@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: letsagree-backend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "letsagree.labels" . | nindent 4 }}
+    app: letsagree-backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: letsagree-backend
+  template:
+    metadata:
+      labels:
+        app: letsagree-backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ include "letsagree.backend.image" . }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+          readinessProbe:
+            httpGet:
+              path: /version
+              port: http
