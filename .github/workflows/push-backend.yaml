@@ -38,6 +38,7 @@ jobs:
           context: backend
           file: backend/Containerfile
           push: true
+          build-args: VERSION=${{ steps.version.outputs.VERSION }}
           tags: |
             ghcr.io/zon/letsagree-backend:latest
             ghcr.io/zon/letsagree-backend:${{ steps.version.outputs.VERSION }}
