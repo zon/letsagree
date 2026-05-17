@@ -18,7 +18,7 @@ requirements:
       - Secret.Data fields from client-go are already decoded bytes — no base64 decoding needed
       - The Secret type must expose User(), Password(), and DBName() methods reading from the Data map keys "user", "password", and "dbname"
       - NodeIP() lists cluster nodes and returns the InternalIP address type of the first ready node
-    passing: false
+    passing: true
 
   - slug: config-writer
     description: File writer that marshals structs as JSON and writes them to disk
