@@ -8,7 +8,7 @@ requirements:
     description: Define the Opts struct shared between the CLI entry point and orchestration
     items:
       - Define Opts in agreectl/internal/opts with fields Context, Namespace, DBSecret, Host, and Port
-    passing: false
+    passing: true
 
   - slug: k8s-client
     description: Kubernetes client that fetches secrets and node IPs using a kubeconfig context
