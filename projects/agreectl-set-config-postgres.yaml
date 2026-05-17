@@ -34,7 +34,7 @@ requirements:
       - Define PostgresConfig struct in agreectl/internal/files with fields host, port, user, password, dbname (json tagged)
       - Define PostgresConfigPath constant in agreectl/internal/files with value "backend/config/postgres.json"
       - The real ConfigWriter implementation must create parent directories if they do not exist before writing
-    passing: false
+    passing: true
 
   - slug: postgres-orchestration
     description: Orchestration for fetching the CNPG secret and writing the postgres config
