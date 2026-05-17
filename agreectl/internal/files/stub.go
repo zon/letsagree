@@ -42,9 +42,9 @@ var lastWritten struct {
 	data []byte
 }
 
-type capturingConfigWriter struct{}
+type CapturingConfigWriter struct{}
 
-func (c *capturingConfigWriter) WriteJSON(path string, v any) error {
+func (c *CapturingConfigWriter) WriteJSON(path string, v any) error {
 	lastWritten.mu.Lock()
 	defer lastWritten.mu.Unlock()
 	data, err := json.Marshal(v)
@@ -56,20 +56,17 @@ func (c *capturingConfigWriter) WriteJSON(path string, v any) error {
 	return nil
 }
 
-func WrittenAt(t testing.TB, path string, v any) {
+func WrittenAt(t testing.TB, path string, v any) *PostgresConfig {
 	t.Helper()
-	if err := writtenAt(path, v); err != nil {
-		t.Fatalf("WrittenAt: %v", err)
-	}
-}
-
-func writtenAt(path string, v any) error {
 	lastWritten.mu.Lock()
 	defer lastWritten.mu.Unlock()
 	if lastWritten.path != path {
-		return os.ErrNotExist
+		t.Fatalf("WrittenAt: path mismatch: got %q, want %q", lastWritten.path, path)
 	}
-	return json.Unmarshal(lastWritten.data, v)
+	if err := json.Unmarshal(lastWritten.data, v); err != nil {
+		t.Fatalf("WrittenAt: %v", err)
+	}
+	return v.(*PostgresConfig)
 }
 
 func readJSONFile(path string, v any) error {

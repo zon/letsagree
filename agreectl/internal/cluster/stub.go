@@ -32,11 +32,19 @@ func AnyNodeIP() string {
 }
 
 func WithNodeIP(ip string) K8sClient {
-	return &stubK8sClient{nodeIP: ip}
+	return &stubK8sClient{nodeIP: ip, secret: &Secret{Data: map[string][]byte{
+		"user":     []byte("app"),
+		"password": []byte("secret"),
+		"dbname":   []byte("app"),
+	}}}
 }
 
 func ThatFailsOnNodeIP() K8sClient {
-	return &stubK8sClient{nodeErr: assertNeverError{}}
+	return &stubK8sClient{nodeErr: assertNeverError{}, secret: &Secret{Data: map[string][]byte{
+		"user":     []byte("app"),
+		"password": []byte("secret"),
+		"dbname":   []byte("app"),
+	}}}
 }
 
 type assertNeverError struct{}

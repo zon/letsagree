@@ -87,7 +87,7 @@ requirements:
               DBName:   secret.DBName(),
             })
           }
-    passing: false
+    passing: true
 
   - slug: postgres-tests
     description: Tests for the Postgres orchestration method
