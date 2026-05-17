@@ -1,0 +1,20 @@
+FROM docker.io/oven/bun:1-alpine AS builder
+
+WORKDIR /build
+
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
+
+COPY . .
+
+FROM docker.io/oven/bun:1-alpine
+
+WORKDIR /app
+
+COPY --from=builder /build/node_modules ./node_modules
+COPY --from=builder /build/src ./src
+COPY package.json .
+
+EXPOSE 3000
+
+ENTRYPOINT ["bun", "src/index.ts"]
