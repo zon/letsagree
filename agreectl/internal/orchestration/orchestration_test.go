@@ -10,22 +10,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func withMocks(overrides ...any) *Orchestration {
+	defaultK8s := cluster.WithSecret(cluster.AnySecret())
+	defaultCW := &files.CapturingConfigWriter{}
+	var k8s K8sClient = defaultK8s
+	var cw ConfigWriter = defaultCW
+
+	for _, o := range overrides {
+		switch v := o.(type) {
+		case K8sClient:
+			k8s = v
+		case ConfigWriter:
+			cw = v
+		}
+	}
+
+	return New(k8s, cw)
+}
+
 func TestPostgres_autoDetectsNodeIP(t *testing.T) {
 	ip := cluster.AnyNodeIP()
-	svc := WithMocks(cluster.WithNodeIP(ip))
+	svc := withMocks(cluster.WithNodeIP(ip))
 	require.NoError(t, svc.Postgres(opts.Any()))
 	assert.Equal(t, ip, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
 }
 
 func TestPostgres_usesProvidedHost(t *testing.T) {
-	svc := WithMocks(cluster.ThatFailsOnNodeIP())
+	svc := withMocks(cluster.ThatFailsOnNodeIP())
 	require.NoError(t, svc.Postgres(opts.WithHost("localhost")))
 	assert.Equal(t, "localhost", files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
 }
 
 func TestPostgres_copiesSecretFields(t *testing.T) {
 	s := cluster.AnySecret()
-	svc := WithMocks(cluster.WithSecret(s))
+	svc := withMocks(cluster.WithSecret(s))
 	require.NoError(t, svc.Postgres(opts.Any()))
 	cfg := files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{})
 	assert.Equal(t, s.User(), cfg.User)
@@ -35,7 +53,7 @@ func TestPostgres_copiesSecretFields(t *testing.T) {
 
 func TestPostgres_usesOptsPort(t *testing.T) {
 	port := opts.AnyPort()
-	svc := WithMocks()
+	svc := withMocks()
 	require.NoError(t, svc.Postgres(opts.WithPort(port)))
 	assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
 }

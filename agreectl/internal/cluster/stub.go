@@ -1,5 +1,25 @@
 package cluster
 
+type StubK8sClient struct {
+	Secret    *Secret
+	RetNodeIP string
+	NodeErr   error
+	Calls     struct {
+		Namespace string
+		Secret    string
+	}
+}
+
+func (s *StubK8sClient) GetSecret(namespace, name string) (*Secret, error) {
+	s.Calls.Namespace = namespace
+	s.Calls.Secret = name
+	return s.Secret, s.NodeErr
+}
+
+func (s *StubK8sClient) NodeIP() (string, error) {
+	return s.RetNodeIP, s.NodeErr
+}
+
 type stubK8sClient struct {
 	secret  *Secret
 	nodeIP  string

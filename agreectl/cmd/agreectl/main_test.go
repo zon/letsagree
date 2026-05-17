@@ -3,7 +3,6 @@ package main
 import (
 	"agreectl/internal/cluster"
 	"agreectl/internal/files"
-	"agreectl/internal/orchestration"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestSetConfig_customContextNamespaceAndSecret(t *testing.T) {
-	stub := &orchestration.StubK8sClient{
+	stub := &cluster.StubK8sClient{
 		Secret:    cluster.AnySecret(),
 		RetNodeIP: "10.0.0.1",
 	}
