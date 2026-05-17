@@ -139,7 +139,7 @@ requirements:
             require.NoError(t, svc.Postgres(opts.WithPort(port)))
             assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
           }
-    passing: false
+    passing: true
 
   - slug: cli-entry-point
     description: agreectl CLI entry point wiring Kong flags into the orchestration
