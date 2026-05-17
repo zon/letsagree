@@ -5,7 +5,7 @@ feature: specs/features/backend/publish
 requirements:
   - slug: containerfile
     description: Add backend/Containerfile that builds the backend binary and produces a runnable image
-    passing: false
+    passing: true
     scenarios:
       - title: container image runs the backend
         items:
@@ -17,7 +17,7 @@ requirements:
 
   - slug: push-backend
     description: Add just push-backend recipe that builds the image, tags with VERSION and latest, and pushes both to ghcr.io
-    passing: false
+    passing: true
     scenarios:
       - title: push-backend tags with VERSION
         items:

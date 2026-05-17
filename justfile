@@ -12,3 +12,10 @@ frontend:
 
 build-backend:
   cd backend && go build -o bin/server ./cmd/server
+
+version := `cat ./VERSION`
+
+push-backend:
+  podman build -t ghcr.io/zon/letsagree-backend:{{version}} -t ghcr.io/zon/letsagree-backend:latest backend/
+  podman push ghcr.io/zon/letsagree-backend:{{version}}
+  podman push ghcr.io/zon/letsagree-backend:latest
