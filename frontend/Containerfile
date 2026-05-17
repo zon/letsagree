@@ -9,6 +9,9 @@ COPY . .
 
 FROM docker.io/oven/bun:1-alpine
 
+ARG VERSION=dev
+ENV VERSION=${VERSION}
+
 WORKDIR /app
 
 COPY --from=builder /build/node_modules ./node_modules

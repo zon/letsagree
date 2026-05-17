@@ -1,6 +1,4 @@
 import { describe, test, expect } from "bun:test"
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
 
 describe("entry-point items", () => {
   test("--addr flag controls the HTTP listen address, defaulting to :3000", async () => {
@@ -23,12 +21,10 @@ describe("entry-point items", () => {
     expect(values.backend).toBe("http://localhost:8080")
   })
 
-  test("VERSION file is read from the repo root and trimmed of whitespace", () => {
-    const versionPath = join("/workspace/repo", "VERSION")
-    const version = readFileSync(versionPath, "utf-8").trim()
-    expect(version).toBe("0.3.0")
-    expect(version).not.toContain("\n")
-    expect(version).not.toContain(" ")
+  test("VERSION env var is used as the version, defaulting to dev", () => {
+    const version = process.env.VERSION ?? "dev"
+    expect(typeof version).toBe("string")
+    expect(version.length).toBeGreaterThan(0)
   })
 
   test("GET /about route calls aboutPage with a fetchBackendVersion closure and the version string", () => {

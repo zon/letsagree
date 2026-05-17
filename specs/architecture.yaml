@@ -6,7 +6,7 @@ modules:
   - path: frontend/src/index.ts
     description: >
       Entry point for the frontend server. Parses CLI args, reads the VERSION
-      file, mounts Elysia routes, and starts listening.
+      environment variable, mounts Elysia routes, and starts listening.
   - path: frontend/src/orchestration.ts
     orchestration: true
     description: >
