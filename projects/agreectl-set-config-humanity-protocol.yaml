@@ -40,7 +40,7 @@ requirements:
       - Define HumanityProtocolConfig struct in agreectl/internal/files with ClientID, ClientSecret, PublicKey, IssuerURL, and RedirectURL fields tagged for YAML serialization
       - Define HumanityProtocolConfigPath constant in agreectl/internal/files as "backend/config/humanity-protocol.yaml"
       - Add test helpers AnyHPCredentials, WithHPEnv, and WrittenYAMLAt in agreectl/internal/files
-    passing: false
+    passing: true
 
   - slug: hp-orchestration
     description: Add HumanityProtocol method and extend the orchestration interfaces
