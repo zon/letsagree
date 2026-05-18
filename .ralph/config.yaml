@@ -1,5 +1,10 @@
 workflow:
   namespace: ralph-letsagree
+  secrets:
+    - name: postgres
+      destFile: backend/config/postgres.json
+    - name: humanity-protocol
+      destFile: backend/config/humanity-protocol.yaml
 model: minimax/MiniMax-M2.7
 
 before:

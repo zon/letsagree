@@ -2,20 +2,21 @@ package cluster
 
 import "testing"
 
+type GetSecretCall struct {
+	Namespace string
+	Secret    string
+}
+
 type StubK8sClient struct {
 	Secret    *Secret
 	RetNodeIP string
 	NodeErr   error
 	UpsertErr error
-	Calls     struct {
-		Namespace string
-		Secret    string
-	}
+	Calls     []GetSecretCall
 }
 
 func (s *StubK8sClient) GetSecret(namespace, name string) (*Secret, error) {
-	s.Calls.Namespace = namespace
-	s.Calls.Secret = name
+	s.Calls = append(s.Calls, GetSecretCall{Namespace: namespace, Secret: name})
 	return s.Secret, s.NodeErr
 }
 
@@ -46,6 +47,14 @@ func (s *stubK8sClient) UpsertSecret(namespace, name string, data map[string]str
 
 func (s *stubK8sClient) NodeIP() (string, error) {
 	return s.nodeIP, s.nodeErr
+}
+
+func SecretFromStringData(data map[string]string) *Secret {
+	bytes := make(map[string][]byte, len(data))
+	for k, v := range data {
+		bytes[k] = []byte(v)
+	}
+	return &Secret{Bytes: bytes}
 }
 
 func AnySecret() *Secret {
@@ -90,14 +99,6 @@ func ThatFailsOnUpsert() K8sClient {
 
 func ThatFailsOnGetSecret() K8sClient {
 	return &stubK8sClient{secErr: assertNeverGetSecret{}}
-}
-
-func AnyHPSecret() *Secret {
-	return &Secret{Bytes: map[string][]byte{
-		"clientId":     []byte("hp-client-id"),
-		"clientSecret": []byte("hp-client-secret"),
-		"publicKey":    []byte("hp-public-key"),
-	}}
 }
 
 type assertNeverError struct{}

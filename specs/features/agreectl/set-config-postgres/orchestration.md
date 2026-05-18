@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fetch the CNPG app secret from Kubernetes, copy it into the ralph namespace, resolve the external host when not provided, and write `backend/config/postgres.json` with in-cluster host and port replaced.
+Fetch the CNPG app secret from Kubernetes, resolve the external host when not provided, write `backend/config/postgres.json` with in-cluster host and port replaced, and upsert the full JSON config into the `postgres` secret in the ralph namespace.
 
 ## Orchestration
 
@@ -15,10 +15,6 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		return err
 	}
 
-	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.DBSecret, secret.Data()); err != nil {
-		return err
-	}
-
 	host := in.DBHost
 	if host == "" {
 		host, err = o.cluster.NodeIP()
@@ -27,23 +23,32 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		}
 	}
 
-	return o.files.WriteJSON(files.PostgresConfigPath, files.PostgresConfig{
+	config := files.PostgresConfig{
 		Host:     host,
 		Port:     in.DBPort,
 		User:     secret.User(),
 		Password: secret.Password(),
 		DBName:   secret.DBName(),
-	})
+	}
+
+	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.PostgresSecret, config.ToSecretData()); err != nil {
+		return err
+	}
+
+	return o.files.WriteJSON(files.PostgresConfigPath, config)
 }
 ```
 
 ### Helpers
 
-- **`cluster.GetSecret(namespace, name)`** — fetches the named Kubernetes secret and returns a `Secret` exposing `User()`, `Password()`, `DBName()`, and `Data()` from its data fields
+- **`cluster.GetSecret(namespace, name)`** — fetches the named Kubernetes secret and returns a `Secret` exposing `User()`, `Password()`, `DBName()`, and `Data()`
 - **`cluster.UpsertSecret(namespace, name, data)`** — creates or updates a Kubernetes secret by name using apply semantics
 - **`cluster.NodeIP()`** — lists cluster nodes and returns the `InternalIP` of the first ready node
+- **`files.PostgresConfig`** — output struct with fields `Host`, `Port`, `User`, `Password`, `DBName` and corresponding `json:` tags
+- **`files.PostgresConfig.ToSecretData()`** — marshals the config as JSON and returns `map[string]string{"postgres.json": <json>}`
 - **`files.WriteJSON(path, v)`** — marshals `v` as JSON and writes it to `path`, creating any missing parent directories
 - **`files.PostgresConfigPath`** — output path constant: `"backend/config/postgres.json"`
+- **`opts.Opts`** — fields used: `Namespace`, `DBSecret`, `DBHost`, `DBPort`, `RalphNamespace`, `PostgresSecret`
 
 ## Tests
 
@@ -84,7 +89,13 @@ func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
 	secret := cluster.AnySecret()
 	svc := orchestration.WithMocks(cluster.WithSecret(secret))
 	require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
-	assert.Equal(t, secret.Data(), cluster.UpsertedSecretData(t))
+	expected := files.PostgresConfig{
+		Port:     opts.AnyDBPort(),
+		User:     secret.User(),
+		Password: secret.Password(),
+		DBName:   secret.DBName(),
+	}
+	assert.Equal(t, expected.ToSecretData(), cluster.UpsertedSecretData(t))
 }
 ```
 
@@ -94,13 +105,12 @@ func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
 - **`cluster.AnyNodeIP()`** — returns an arbitrary valid node IP string
 - **`cluster.WithNodeIP(ip)`** — returns a `K8sClient` stub whose `NodeIP()` returns `ip`
 - **`cluster.ThatFailsOnNodeIP()`** — returns a `K8sClient` stub that fails the test if `NodeIP()` is called
-- **`cluster.ThatFailsOnUpsert()`** — returns a `K8sClient` stub that fails the test if `UpsertSecret()` is called
 - **`cluster.UpsertedSecretData(t)`** — returns the data map passed to the most recent `UpsertSecret` call; fails the test if no upsert occurred
 - **`cluster.AnySecret()`** — returns a `Secret` stub with arbitrary but stable field values
-- **`cluster.WithSecret(s)`** — returns a `K8sClient` stub whose `GetSecret` returns `s`
+- **`cluster.WithSecret(s)`** — returns a `K8sClient` stub whose `GetSecret` returns `s` for any call
 - **`files.WrittenAt(t, path, out)`** — unmarshals the JSON captured by the `ConfigWriter` stub for `path` into `out` and returns it; fails the test if nothing was written to that path
-- **`opts.Any()`** — returns `Opts` with defaults matching the CLI flags (no host, port 30432, namespace `letsagree`, ralph-namespace `ralph-letsagree`, db-secret `letsagree-app`); defined in `agreectl/internal/opts`
-- **`opts.WithDBHost(host)`** — returns `Opts` with `DBHost` set to the given value; defined in `agreectl/internal/opts`
-- **`opts.AnyDBPort()`** — returns an arbitrary port number distinct from the default; defined in `agreectl/internal/opts`
-- **`opts.WithDBPort(port)`** — returns `Opts` with `DBPort` set to the given value; defined in `agreectl/internal/opts`
-- **`opts.WithRalphNamespace(ns)`** — returns `Opts` with `RalphNamespace` set to the given value; defined in `agreectl/internal/opts`
+- **`opts.Any()`** — returns `Opts` with defaults matching the CLI flags
+- **`opts.WithDBHost(host)`** — returns `Opts` with `DBHost` set to the given value
+- **`opts.AnyDBPort()`** — returns an arbitrary port number distinct from the default
+- **`opts.WithDBPort(port)`** — returns `Opts` with `DBPort` set to the given value
+- **`opts.WithRalphNamespace(ns)`** — returns `Opts` with `RalphNamespace` set to the given value

@@ -22,14 +22,6 @@ type HPCredentials struct {
 	PublicKey    string
 }
 
-func (h HPCredentials) ToSecretData() map[string]string {
-	return map[string]string{
-		"clientId":     h.ClientID,
-		"clientSecret": h.ClientSecret,
-		"publicKey":    h.PublicKey,
-	}
-}
-
 type HumanityProtocolConfig struct {
 	ClientID     string `yaml:"clientID"`
 	ClientSecret string `yaml:"clientSecret"`
@@ -49,6 +41,16 @@ type PostgresConfig struct {
 }
 
 const PostgresConfigPath = "backend/config/postgres.json"
+
+func (p PostgresConfig) ToSecretData() map[string]string {
+	data, _ := json.Marshal(p)
+	return map[string]string{"postgres.json": string(data)}
+}
+
+func (h HumanityProtocolConfig) ToSecretData() map[string]string {
+	data, _ := yaml.Marshal(h)
+	return map[string]string{"humanity-protocol.yaml": string(data)}
+}
 
 func WriteJSON(path string, v any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {

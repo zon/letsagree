@@ -1,7 +1,7 @@
 [build]
   cmd = "go build -o ./bin/server ./cmd/server"
   entrypoint = ["./bin/server"]
-  full_bin = "ADDR=:8080 ./bin/server"
+  full_bin = "./bin/server --config ${AGREE_CONFIG_DIR:-config}"
   exclude_dir = ["tmp", "vendor"]
   delay = 100
 

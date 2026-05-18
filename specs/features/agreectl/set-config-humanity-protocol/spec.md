@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agreectl set config` provisions `backend/config/humanity-protocol.yaml` for local development as part of its single-command config setup. When credentials are first introduced via an env file, it also writes them as a Kubernetes secret so subsequent runs can pull the values from the cluster instead of requiring the env file again.
+`agreectl set config` provisions `backend/config/humanity-protocol.yaml` for local development as part of its single-command config setup. Both when an env file is provided and when pulling credentials from the existing `humanity-protocol` secret, it writes the full YAML config back into the `humanity-protocol` Kubernetes secret in the ralph namespace so workflow pods can mount it as a config file.
 
 ## Requirements
 
@@ -10,70 +10,71 @@
 
   | Flag                | Default                               | Description                                                  |
   |---------------------|---------------------------------------|--------------------------------------------------------------|
-  | `--ralph-namespace` | `ralph-letsagree`                     | Kubernetes namespace for the Humanity Protocol secret        |
-  | `--hp-secret`       | `humanity-protocol`                   | Name of the Kubernetes secret                                |
+  | `--ralph-namespace` | `ralph-letsagree`                     | Kubernetes namespace for the HP secret                       |
+  | `--hp-secret`       | `humanity-protocol`                   | Name of the Humanity Protocol secret in Ralph's namespace    |
   | `--hp-env`          | _(none)_                              | Path to an env file containing Humanity Protocol credentials |
-  | `--oidc-issuer`      | `https://api.sandbox.humanity.org/v2` | OIDC issuer base URL                                         |
-  | `--oidc-redirect`    | _(required)_                          | Absolute callback URL registered with the provider           |
+  | `--oidc-issuer`     | `https://api.sandbox.humanity.org/v2` | OIDC issuer base URL                                         |
+  | `--oidc-redirect`   | _(required)_                          | Absolute callback URL registered with the provider           |
 
-- The `--context` flag from the existing `set config` command MUST also be used when accessing the Humanity Protocol secret.
+- The `--context` flag from the existing `set config` command MUST also be used when accessing the HP secret.
 
 ### Env file parsing
 
 - When `--hp-env` is provided, the command MUST parse the file for the following keys:
-  - `HUMANITY_CLIENT_ID` → `clientId`
+  - `HUMANITY_CLIENT_ID` → `clientID`
   - `HUMANITY_CLIENT_SECRET` → `clientSecret`
   - `HUMANITY_PUBLIC_KEY` → `publicKey`
 - Lines beginning with `#` MUST be ignored.
 - If any of the three required keys are missing from the env file, the command MUST exit with an error naming the missing keys.
 
-### Writing the Kubernetes secret
-
-- When `--hp-env` is provided, the command MUST write a Kubernetes secret to the specified namespace containing the parsed credential values (`clientId`, `clientSecret`, `publicKey`).
-- If the secret already exists it MUST be updated (upserted), not duplicated.
-
 ### Determining the source of credentials
 
-- When `--hp-env` is not provided and the Kubernetes secret is absent from the cluster, the command MUST exit with an error instructing the user to provide `--hp-env`.
-- When `--hp-env` is not provided and the Kubernetes secret is present, the command MUST read credential values from the secret.
+- When `--hp-env` is provided, credentials MUST be read from the env file.
+- When `--hp-env` is not provided and the `--hp-secret` secret does not contain a `humanity-protocol.yaml` key, the command MUST exit with an error instructing the user to provide `--hp-env`.
+- When `--hp-env` is not provided and the `--hp-secret` secret already contains a `humanity-protocol.yaml` key, the command MUST read credential values from that stored config.
+
+### Writing the HP secret
+
+- After resolving credentials from either source, the command MUST upsert the `--hp-secret` secret in `--ralph-namespace` with the key `humanity-protocol.yaml` set to the full YAML content of the humanity protocol config.
+- If the secret already exists it MUST be updated (upserted), not duplicated.
 
 ### Writing the local config
 
 - The command MUST write `backend/config/humanity-protocol.yaml` relative to the repo root, creating `backend/config/` if it does not exist.
-- The written YAML MUST contain the fields: `clientId`, `clientSecret`, `publicKey`, `issuerUrl`, `redirectUrl`.
-- `clientId`, `clientSecret`, and `publicKey` MUST come from the resolved credential source (env file or cluster secret).
-- `issuerUrl` MUST be the value of `--oidc-issuer`.
-- `redirectUrl` MUST be the value of `--oidc-redirect`.
+- The written YAML MUST contain the fields: `clientID`, `clientSecret`, `publicKey`, `issuerURL`, `redirectURL`.
+- `clientID`, `clientSecret`, and `publicKey` MUST come from the resolved credential source (env file or HP secret).
+- `issuerURL` MUST be the value of `--oidc-issuer`.
+- `redirectURL` MUST be the value of `--oidc-redirect`.
 
 ## Scenarios
 
-### Scenario: env file provided — writes local config and cluster secret
+### Scenario: env file provided — writes local config and HP secret
 
 Given the env file at `backend/config/env.sandbox` contains valid `HUMANITY_CLIENT_ID`, `HUMANITY_CLIENT_SECRET`, and `HUMANITY_PUBLIC_KEY`  
 When `agreectl set config --hp-env backend/config/env.sandbox --oidc-redirect https://example.com/auth/callback` is run  
-Then the Kubernetes secret `humanity-protocol` is written to the `ralph-letsagree` namespace with the parsed credential values  
+Then the `humanity-protocol` secret in `ralph-letsagree` is upserted with key `humanity-protocol.yaml` containing the full YAML config  
 And `backend/config/humanity-protocol.yaml` is written with all five fields populated
 
-### Scenario: env file provided — upserts existing cluster secret
+### Scenario: env file provided — upserts existing HP secret
 
-Given the Kubernetes secret `humanity-protocol` already exists in the `ralph-letsagree` namespace  
+Given the `humanity-protocol` secret already exists in the `ralph-letsagree` namespace  
 When `agreectl set config --hp-env backend/config/env.sandbox --oidc-redirect https://example.com/auth/callback` is run  
 Then the existing secret is updated, not duplicated
 
-### Scenario: no env file and secret absent — exits with error
+### Scenario: no env file and no HP data in secret — exits with error
 
-Given the Kubernetes secret `humanity-protocol` does not exist in the `ralph-letsagree` namespace  
+Given the `humanity-protocol` secret does not contain a `humanity-protocol.yaml` key  
 And `--hp-env` is not provided  
 When `agreectl set config --oidc-redirect https://example.com/auth/callback` is run  
 Then the command exits with an error instructing the user to provide `--hp-env`
 
-### Scenario: no env file and secret present — pulls from cluster
+### Scenario: no env file and HP data present — pulls from HP secret
 
-Given the Kubernetes secret `humanity-protocol` exists in the `ralph-letsagree` namespace  
+Given the `humanity-protocol` secret in `ralph-letsagree` contains a `humanity-protocol.yaml` key  
 And `--hp-env` is not provided  
 When `agreectl set config --oidc-redirect https://example.com/auth/callback` is run  
-Then `backend/config/humanity-protocol.yaml` is written using the credential values from the cluster secret  
-And no Kubernetes secret write is performed
+Then `backend/config/humanity-protocol.yaml` is written using the credential values from the HP secret  
+And the `humanity-protocol` secret is upserted with the updated config (reflecting current OIDC options)
 
 ### Scenario: env file missing required key — exits with error
 
@@ -87,7 +88,7 @@ Given `backend/config/` does not exist
 When the command runs successfully  
 Then `backend/config/` is created and `backend/config/humanity-protocol.yaml` is written
 
-### Scenario: custom context, namespace, and secret name
+### Scenario: custom context and ralph-namespace
 
-Given `--context k3s-prod --ralph-namespace infra --hp-secret hp-creds` are provided  
-Then the secret `hp-creds` is read from or written to namespace `infra` using context `k3s-prod`
+Given `--context k3s-prod --ralph-namespace infra` are provided  
+Then the `humanity-protocol` secret is read from and written to namespace `infra` using context `k3s-prod`

@@ -66,17 +66,28 @@ func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
 	secret := cluster.AnySecret()
 	svc := withMocks(cluster.WithSecret(secret))
 	require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
-	assert.Equal(t, secret.Data(), cluster.UpsertedSecretData(t))
+	expected := files.PostgresConfig{
+		Port:     opts.AnyDBPort(),
+		User:     secret.User(),
+		Password: secret.Password(),
+		DBName:   secret.DBName(),
+	}
+	assert.Equal(t, expected.ToSecretData(), cluster.UpsertedSecretData(t))
 }
 
 func TestHumanityProtocol_envFileUpsertClusterSecret(t *testing.T) {
 	creds := files.AnyHPCredentials()
-	svc := withMocks(
-		cluster.ThatFailsOnGetSecret(),
-		files.WithHPEnv(creds),
-	)
-	require.NoError(t, svc.HumanityProtocol(opts.WithHPEnvFile("any.env")))
-	assert.Equal(t, creds.ToSecretData(), cluster.UpsertedSecretData(t))
+	svc := withMocks(files.WithHPEnv(creds))
+	o := opts.WithHPEnvFile("any.env")
+	require.NoError(t, svc.HumanityProtocol(o))
+	expected := files.HumanityProtocolConfig{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		PublicKey:    creds.PublicKey,
+		IssuerURL:    o.OIDCIssuer,
+		RedirectURL:  o.OIDCRedirect,
+	}
+	assert.Equal(t, expected.ToSecretData(), cluster.UpsertedSecretData(t))
 }
 
 func TestHumanityProtocol_envFileWritesLocalConfig(t *testing.T) {
@@ -89,23 +100,30 @@ func TestHumanityProtocol_envFileWritesLocalConfig(t *testing.T) {
 	assert.Equal(t, creds.PublicKey, cfg.PublicKey)
 }
 
-func TestHumanityProtocol_secretPresentWritesLocalConfig(t *testing.T) {
-	secret := cluster.AnyHPSecret()
-	svc := withMocks(cluster.WithSecret(secret))
-	require.NoError(t, svc.HumanityProtocol(opts.AnyHP()))
+func TestHumanityProtocol_existingSecretWritesLocalConfig(t *testing.T) {
+	creds := files.AnyHPCredentials()
+	hpConfig := files.HumanityProtocolConfig{
+		ClientID:     creds.ClientID,
+		ClientSecret: creds.ClientSecret,
+		PublicKey:    creds.PublicKey,
+	}
+	svc := withMocks(cluster.WithSecret(cluster.SecretFromStringData(hpConfig.ToSecretData())))
+	require.NoError(t, svc.HumanityProtocol(opts.Any()))
 	cfg := files.WrittenYAMLAt(t, files.HumanityProtocolConfigPath, &files.HumanityProtocolConfig{})
-	assert.Equal(t, secret.ClientID(), cfg.ClientID)
-	assert.Equal(t, secret.ClientSecret(), cfg.ClientSecret)
-	assert.Equal(t, secret.PublicKey(), cfg.PublicKey)
+	assert.Equal(t, creds.ClientID, cfg.ClientID)
+	assert.Equal(t, creds.ClientSecret, cfg.ClientSecret)
+	assert.Equal(t, creds.PublicKey, cfg.PublicKey)
 }
 
-func TestHumanityProtocol_secretPresentSkipsUpsert(t *testing.T) {
-	svc := withMocks(cluster.ThatFailsOnUpsert())
-	require.NoError(t, svc.HumanityProtocol(opts.AnyHP()))
+func TestHumanityProtocol_noHPDataInBackendSecret_returnsError(t *testing.T) {
+	svc := withMocks()
+	err := svc.HumanityProtocol(opts.Any())
+	require.Error(t, err)
 }
 
 func TestHumanityProtocol_writesOIDCOptions(t *testing.T) {
-	svc := withMocks()
+	hpConfig := files.HumanityProtocolConfig{ClientID: "any", ClientSecret: "any", PublicKey: "any"}
+	svc := withMocks(cluster.WithSecret(cluster.SecretFromStringData(hpConfig.ToSecretData())))
 	require.NoError(t, svc.HumanityProtocol(opts.WithOIDCOptions("https://issuer.example.com", "https://app.example.com/auth/callback")))
 	cfg := files.WrittenYAMLAt(t, files.HumanityProtocolConfigPath, &files.HumanityProtocolConfig{})
 	assert.Equal(t, "https://issuer.example.com", cfg.IssuerURL)

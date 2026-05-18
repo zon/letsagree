@@ -4,6 +4,9 @@ import (
 	"agreectl/internal/cluster"
 	"agreectl/internal/files"
 	"agreectl/internal/opts"
+	"errors"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Orchestration struct {
@@ -36,10 +39,6 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		return err
 	}
 
-	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.DBSecret, secret.Data()); err != nil {
-		return err
-	}
-
 	host := in.DBHost
 	if host == "" {
 		host, err = o.cluster.NodeIP()
@@ -48,13 +47,19 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		}
 	}
 
-	return o.files.WriteJSON(files.PostgresConfigPath, files.PostgresConfig{
+	config := files.PostgresConfig{
 		Host:     host,
 		Port:     in.DBPort,
 		User:     secret.User(),
 		Password: secret.Password(),
 		DBName:   secret.DBName(),
-	})
+	}
+
+	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.PostgresSecret, config.ToSecretData()); err != nil {
+		return err
+	}
+
+	return o.files.WriteJSON(files.PostgresConfigPath, config)
 }
 
 func (o *Orchestration) HumanityProtocol(in opts.Opts) error {
@@ -65,27 +70,38 @@ func (o *Orchestration) HumanityProtocol(in opts.Opts) error {
 		if err != nil {
 			return err
 		}
-		if err := o.cluster.UpsertSecret(in.RalphNamespace, in.HPSecret, parsed.ToSecretData()); err != nil {
-			return err
-		}
 		creds = parsed
 	} else {
 		secret, err := o.cluster.GetSecret(in.RalphNamespace, in.HPSecret)
 		if err != nil {
+			return errors.New("humanity protocol config not found in secret; provide --hp-env")
+		}
+		yamlData := secret.Data()["humanity-protocol.yaml"]
+		if yamlData == "" {
+			return errors.New("humanity protocol config not found in secret; provide --hp-env")
+		}
+		var existing files.HumanityProtocolConfig
+		if err := yaml.Unmarshal([]byte(yamlData), &existing); err != nil {
 			return err
 		}
 		creds = files.HPCredentials{
-			ClientID:     secret.ClientID(),
-			ClientSecret: secret.ClientSecret(),
-			PublicKey:    secret.PublicKey(),
+			ClientID:     existing.ClientID,
+			ClientSecret: existing.ClientSecret,
+			PublicKey:    existing.PublicKey,
 		}
 	}
 
-	return o.files.WriteYAML(files.HumanityProtocolConfigPath, files.HumanityProtocolConfig{
-		ClientID:    creds.ClientID,
+	config := files.HumanityProtocolConfig{
+		ClientID:     creds.ClientID,
 		ClientSecret: creds.ClientSecret,
 		PublicKey:    creds.PublicKey,
 		IssuerURL:    in.OIDCIssuer,
 		RedirectURL:  in.OIDCRedirect,
-	})
+	}
+
+	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.HPSecret, config.ToSecretData()); err != nil {
+		return err
+	}
+
+	return o.files.WriteYAML(files.HumanityProtocolConfigPath, config)
 }

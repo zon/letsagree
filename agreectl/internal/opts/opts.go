@@ -1,16 +1,17 @@
 package opts
 
 type Opts struct {
-	Context         string
-	Namespace       string
-	DBSecret        string
-	DBHost          string
-	DBPort          int
-	RalphNamespace  string
-	HPSecret        string
-	HPEnvFile       string
-	OIDCIssuer      string
-	OIDCRedirect    string
+	Context        string
+	Namespace      string
+	DBSecret       string
+	DBHost         string
+	DBPort         int
+	RalphNamespace string
+	PostgresSecret string
+	HPSecret       string
+	HPEnvFile      string
+	OIDCIssuer     string
+	OIDCRedirect   string
 }
 
 var defaultOpts = Opts{
@@ -19,6 +20,7 @@ var defaultOpts = Opts{
 	DBSecret:       "letsagree-app",
 	DBPort:         30432,
 	RalphNamespace: "ralph-letsagree",
+	PostgresSecret: "postgres",
 	HPSecret:       "humanity-protocol",
 	OIDCIssuer:     "https://api.sandbox.humanity.org/v2",
 }
@@ -65,10 +67,6 @@ func WithDBSecret(secret string) Opts {
 	o := defaultOpts
 	o.DBSecret = secret
 	return o
-}
-
-func AnyHP() Opts {
-	return defaultOpts
 }
 
 func WithHPEnvFile(path string) Opts {

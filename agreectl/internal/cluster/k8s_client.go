@@ -131,7 +131,10 @@ func (c *realK8sClient) UpsertSecret(namespace, name string, data map[string]str
 		},
 		Data: secretData,
 	}
-	_, err := c.clientset.CoreV1().Secrets(namespace).Apply(context.Background(), &secretApplyConfig, metav1.ApplyOptions{})
+	_, err := c.clientset.CoreV1().Secrets(namespace).Apply(context.Background(), &secretApplyConfig, metav1.ApplyOptions{
+		FieldManager: "agreectl",
+		Force:        true,
+	})
 	if err != nil {
 		return err
 	}
