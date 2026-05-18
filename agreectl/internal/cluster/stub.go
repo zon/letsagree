@@ -88,6 +88,18 @@ func ThatFailsOnUpsert() K8sClient {
 	}}}
 }
 
+func ThatFailsOnGetSecret() K8sClient {
+	return &stubK8sClient{secErr: assertNeverGetSecret{}}
+}
+
+func AnyHPSecret() *Secret {
+	return &Secret{Bytes: map[string][]byte{
+		"clientId":     []byte("hp-client-id"),
+		"clientSecret": []byte("hp-client-secret"),
+		"publicKey":    []byte("hp-public-key"),
+	}}
+}
+
 type assertNeverError struct{}
 
 func (assertNeverError) Error() string {
@@ -98,6 +110,12 @@ type assertNeverUpsert struct{}
 
 func (assertNeverUpsert) Error() string {
 	return "UpsertSecret should not be called"
+}
+
+type assertNeverGetSecret struct{}
+
+func (assertNeverGetSecret) Error() string {
+	return "GetSecret should not be called"
 }
 
 var capturedCall struct {

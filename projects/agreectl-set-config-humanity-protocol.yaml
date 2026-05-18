@@ -17,7 +17,7 @@ requirements:
       - Add UpsertSecret(namespace, name string, data map[string]string) error to the K8sClient implementation; create or update the named secret using apply semantics
       - Add ClientID(), ClientSecret(), and PublicKey() methods to cluster.Secret reading from data keys "clientId", "clientSecret", and "publicKey"
       - Add test helpers AnyHPSecret, ThatFailsOnGetSecret, ThatFailsOnUpsert, and UpsertedSecretData in agreectl/internal/cluster
-    passing: false
+    passing: true
 
   - slug: files-hp
     description: Add YAML writing, env file parsing, and HP config types to the files module
