@@ -305,7 +305,7 @@ requirements:
             svc.Logout(c)
             assert.Empty(t, SessionCookieValue(w))
           }
-    passing: false
+    passing: true
 
   - slug: server-wiring
     description: Register auth routes and wire dependencies in the server entry point

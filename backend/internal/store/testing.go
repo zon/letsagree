@@ -97,3 +97,9 @@ func (m *MockSessionStore) Has(token string) bool {
 	_, ok := m.sessions[token]
 	return ok
 }
+
+func (m *MockSessionStore) Seed(token string, userID uint) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.sessions[token] = &Session{ID: 1, Token: token, UserID: userID}
+}

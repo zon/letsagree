@@ -117,3 +117,25 @@ func TestLogout_clearsSessionCookie(t *testing.T) {
 	assert.Contains(t, header, "session=")
 	assert.Contains(t, header, "Max-Age=0")
 }
+
+func TestLogout_clearsSession(t *testing.T) {
+	sessions := store.StubSessions()
+	sessions.Seed("tok123", 1)
+	svc := WithMocks(sessions)
+	w, c := NewTestContext(http.MethodPost, "/auth/logout")
+	WithRequestCookie(c, "session", "tok123")
+	svc.Logout(c)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.False(t, sessions.Has("tok123"))
+	assert.Contains(t, SessionCookieValue(w), "Max-Age=0")
+}
+
+func TestLogout_scenario(t *testing.T) {
+	sessions := store.StubSessions()
+	sessions.Seed("tok123", 1)
+	svc := WithMocks(sessions)
+	_, c := NewTestContext(http.MethodPost, "/auth/logout")
+	WithRequestCookie(c, "session", "tok123")
+	svc.Logout(c)
+	assert.False(t, sessions.Has("tok123"))
+}

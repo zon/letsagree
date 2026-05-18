@@ -59,4 +59,5 @@ func (o *Orchestration) Logout(c *gin.Context) {
 	o.sessions.Delete(SessionCookie(c))
 	ClearSessionCookie(c)
 	c.Status(http.StatusNoContent)
+	c.Writer.WriteHeaderNow()
 }
