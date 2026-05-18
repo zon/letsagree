@@ -1,0 +1,30 @@
+modules:
+  - path: backend/internal/auth
+    orchestration: true
+    description: >
+      Auth orchestration. Defines the OIDCProvider, SessionStore, and UserStore
+      interfaces and implements the Login, Callback, RequireAuth, and Logout Gin
+      handlers. Provides cookie helpers (state, session) and test helpers
+      (WithMocks, NewTestContext, WithRequestCookie, StateCookieValue,
+      SessionCookieValue).
+
+  - path: backend/internal/oidc
+    description: >
+      OIDC provider. Wraps go-oidc/v3 and golang.org/x/oauth2 to produce
+      authorization URLs and exchange codes for verified ID tokens. Defines the
+      IDToken type exposing Sub and IsHuman claims. Provides test helpers
+      (AnyIDToken, IDTokenWithIsHuman, StubProvider).
+
+  - path: backend/internal/store
+    description: >
+      User and session repository. Defines the User and Session GORM models and
+      implements the SessionStore and UserStore interfaces against Postgres.
+      Provides test helpers (AnySession, WithSession, NoSessions, StubSessions,
+      StubUsers).
+
+  - path: backend/cmd/server
+    description: >
+      Gains auth route registration (GET /auth/login, GET /auth/callback,
+      POST /auth/logout), OIDC provider initialisation from
+      config/humanity-protocol.yaml, and GORM database setup. Wires the oidc
+      provider, session store, and user store into the auth orchestration.
