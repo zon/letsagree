@@ -170,7 +170,7 @@ requirements:
             assert.Equal(t, "https://issuer.example.com", cfg.IssuerURL)
             assert.Equal(t, "https://app.example.com/auth/callback", cfg.RedirectURL)
           }
-    passing: false
+    passing: true
 
   - slug: cli-hp-flags
     description: Wire Humanity Protocol flags into the agreectl CLI entry point
