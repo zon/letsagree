@@ -182,4 +182,4 @@ requirements:
     items:
       - Add --ralph-namespace (default ralph-letsagree), --hp-secret (default humanity-protocol), --hp-env, --oidc-issuer (default https://api.sandbox.humanity.org/v2), and --oidc-redirect flags to the set config command in agreectl/cmd/agreectl
       - Populate the corresponding opts.Opts fields from the flags and call HumanityProtocol on the orchestration
-    passing: false
+    passing: true

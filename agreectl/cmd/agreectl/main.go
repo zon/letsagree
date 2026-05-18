@@ -24,7 +24,11 @@ type SetConfig struct {
 	DBSecret        string `name:"db-secret" default:"letsagree-app" help:"Secret name for DB credentials"`
 	DBHost          string `name:"db-host" help:"Database host (optional, auto-detected if not set)"`
 	DBPort          int    `name:"db-port" default:"30432" help:"Database port"`
-	RalphNamespace   string `name:"ralph-namespace" default:"ralph-letsagree" help:"Namespace where Ralph is deployed"`
+	RalphNamespace  string `name:"ralph-namespace" default:"ralph-letsagree" help:"Namespace where Ralph is deployed"`
+	HPSecret        string `name:"hp-secret" default:"humanity-protocol" help:"Secret name for Humanity Protocol credentials"`
+	HPEnvFile       string `name:"hp-env" help:"Path to env file with Humanity Protocol credentials"`
+	OIDCIssuer      string `name:"oidc-issuer" default:"https://api.sandbox.humanity.org/v2" help:"OIDC issuer URL"`
+	OIDCRedirect    string `name:"oidc-redirect" help:"OIDC redirect URL"`
 }
 
 func (c *SetConfig) Run() error {
@@ -39,6 +43,10 @@ func (c *SetConfig) RunWith(newK8sClient func(string) (cluster.K8sClient, error)
 		DBHost:         c.DBHost,
 		DBPort:         c.DBPort,
 		RalphNamespace: c.RalphNamespace,
+		HPSecret:       c.HPSecret,
+		HPEnvFile:      c.HPEnvFile,
+		OIDCIssuer:     c.OIDCIssuer,
+		OIDCRedirect:   c.OIDCRedirect,
 	}
 
 	k8s, err := newK8sClient(o.Context)
@@ -47,7 +55,7 @@ func (c *SetConfig) RunWith(newK8sClient func(string) (cluster.K8sClient, error)
 	}
 
 	svc := orchestration.New(k8s, cw)
-	return svc.Postgres(o)
+	return svc.HumanityProtocol(o)
 }
 
 func main() {
