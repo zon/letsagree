@@ -20,8 +20,7 @@ func secretWithHP(t *testing.T) *cluster.Secret {
 
 func TestSetConfig_customRalphNamespace(t *testing.T) {
 	stub := &cluster.StubK8sClient{
-		Secret:    secretWithHP(t),
-		RetNodeIP: "10.0.0.1",
+		Secret: secretWithHP(t),
 	}
 
 	cfg := SetConfig{

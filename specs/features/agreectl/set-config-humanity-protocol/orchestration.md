@@ -122,7 +122,7 @@ func TestHumanityProtocol_existingSecretWritesLocalConfig(t *testing.T) {
 	assert.Equal(t, creds.PublicKey, cfg.PublicKey)
 }
 
-func TestHumanityProtocol_noHPDataInSecret_returnsError(t *testing.T) {
+func TestHumanityProtocol_noHPDataInBackendSecret_returnsError(t *testing.T) {
 	svc := orchestration.WithMocks()
 	err := svc.HumanityProtocol(opts.Any())
 	require.Error(t, err)

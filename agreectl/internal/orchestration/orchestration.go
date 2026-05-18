@@ -39,27 +39,32 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		return err
 	}
 
-	host := in.DBHost
-	if host == "" {
-		host, err = o.cluster.NodeIP()
-		if err != nil {
-			return err
-		}
+	nodeIP, err := o.cluster.NodeIP()
+	if err != nil {
+		return err
 	}
 
-	config := files.PostgresConfig{
-		Host:     host,
+	localConfig := files.PostgresConfig{
+		Host:     nodeIP,
 		Port:     in.DBPort,
 		User:     secret.User(),
 		Password: secret.Password(),
 		DBName:   secret.DBName(),
 	}
 
-	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.PostgresSecret, config.ToSecretData()); err != nil {
+	clusterConfig := files.PostgresConfig{
+		Host:     secret.QualifiedHost(in.Namespace),
+		Port:     secret.Port(),
+		User:     secret.User(),
+		Password: secret.Password(),
+		DBName:   secret.DBName(),
+	}
+
+	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.PostgresSecret, clusterConfig.ToSecretData()); err != nil {
 		return err
 	}
 
-	return o.files.WriteJSON(files.PostgresConfigPath, config)
+	return o.files.WriteJSON(files.PostgresConfigPath, localConfig)
 }
 
 func (o *Orchestration) HumanityProtocol(in opts.Opts) error {

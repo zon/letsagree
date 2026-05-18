@@ -3,7 +3,9 @@ package store
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -87,8 +89,25 @@ func generateToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(bytes), nil
 }
 
-func NewDB() (*gorm.DB, error) {
-	dsn := fmt.Sprintf("host=localhost user=server password=server dbname=server port=5432 sslmode=disable")
+type PostgresConfig struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	DBName   string `json:"dbname"`
+}
+
+func NewDB(configPath string) (*gorm.DB, error) {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("read postgres config: %w", err)
+	}
+	var cfg PostgresConfig
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse postgres config: %w", err)
+	}
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
+		cfg.Host, cfg.User, cfg.Password, cfg.DBName, cfg.Port)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)

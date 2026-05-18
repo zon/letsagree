@@ -56,7 +56,7 @@ func main() {
 	o := auth.NewOrchestration(provider, store.StubSessions(), store.StubUsers())
 
 	var db *gorm.DB
-	db, err = store.NewDB()
+	db, err = store.NewDB(cli.ConfigDir + "/postgres.json")
 	if err != nil {
 		log.Printf("warning: could not connect to database, using stub stores: %v", err)
 	} else {

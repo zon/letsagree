@@ -23,10 +23,9 @@ type SetConfig struct {
 	Context        string `name:"context" default:"microk8s" help:"Kubernetes context"`
 	Namespace      string `name:"namespace" default:"letsagree" help:"Kubernetes namespace"`
 	DBSecret       string `name:"db-secret" default:"letsagree-app" help:"Secret name for DB credentials"`
+	DBPort         int    `name:"db-port" default:"30432" help:"NodePort for local postgres access"`
 	PostgresSecret string `name:"postgres-secret" default:"postgres" help:"Secret name for postgres config in Ralph's namespace"`
 	HPSecret       string `name:"hp-secret" default:"humanity-protocol" help:"Secret name for Humanity Protocol config in Ralph's namespace"`
-	DBHost         string `name:"db-host" help:"Database host (optional, auto-detected if not set)"`
-	DBPort         int    `name:"db-port" default:"30432" help:"Database port"`
 	RalphNamespace string `name:"ralph-namespace" default:"ralph-letsagree" help:"Namespace where Ralph is deployed"`
 	HPEnvFile      string `name:"hp-env" help:"Path to env file with Humanity Protocol credentials"`
 	OIDCIssuer     string `name:"oidc-issuer" default:"https://api.sandbox.humanity.org/v2" help:"OIDC issuer URL"`
@@ -42,10 +41,9 @@ func (c *SetConfig) RunWith(newK8sClient func(string) (cluster.K8sClient, error)
 		Context:        c.Context,
 		Namespace:      c.Namespace,
 		DBSecret:       c.DBSecret,
+		DBPort:         c.DBPort,
 		PostgresSecret: c.PostgresSecret,
 		HPSecret:       c.HPSecret,
-		DBHost:         c.DBHost,
-		DBPort:         c.DBPort,
 		RalphNamespace: c.RalphNamespace,
 		HPEnvFile:      c.HPEnvFile,
 		OIDCIssuer:     c.OIDCIssuer,
