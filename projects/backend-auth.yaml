@@ -315,7 +315,7 @@ requirements:
       - Construct the auth Orchestration with the real OIDC provider, session store, and user store
       - Register GET /auth/login, GET /auth/callback, and POST /auth/logout routes
       - Register the RequireAuth middleware on protected route groups
-    passing: false
+    passing: true
 
   - slug: version-bump
     description: Bump version for the auth feature release

@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
 	"github.com/alecthomas/kong"
 	"github.com/gin-gonic/gin"
+	"server/internal/auth"
+	"server/internal/oidc"
+	"server/internal/store"
 )
 
 var version = "dev"
@@ -15,10 +19,49 @@ var cli struct {
 	ConfigDir string `name:"config" default:"config" help:"Path to config directory."`
 }
 
+func RegisterRoutes(r *gin.Engine, o *auth.Orchestration) {
+	authGroup := r.Group("/auth")
+	authGroup.GET("/login", o.Login)
+	authGroup.GET("/callback", o.Callback)
+	authGroup.POST("/logout", o.Logout)
+
+	protected := r.Group("")
+	protected.Use(o.RequireAuth)
+	protected.GET("/protected", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+}
+
 func main() {
 	kong.Parse(&cli)
 
+	cfg, err := oidc.LoadConfig(cli.ConfigDir + "/humanity-protocol.yaml")
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	ctx := context.Background()
+	provider, err := oidc.NewProvider(ctx, cfg)
+	if err != nil {
+		log.Fatalf("failed to create OIDC provider: %v", err)
+	}
+
+	db, err := store.NewDB()
+	if err != nil {
+		log.Fatalf("failed to open database: %v", err)
+	}
+	if err := db.AutoMigrate(&store.User{}, &store.Session{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
+
+	sessions := store.New(db)
+	users := store.New(db)
+
+	o := auth.NewOrchestration(provider, sessions, users)
+
 	r := gin.Default()
+	RegisterRoutes(r, o)
+
 	r.GET("/version", func(c *gin.Context) {
 		c.String(http.StatusOK, version)
 	})

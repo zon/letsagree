@@ -40,13 +40,17 @@ func WithMocks(overrides ...any) *Orchestration {
 		users:    store.StubUsers(),
 	}
 	for _, override := range overrides {
-		switch v := override.(type) {
+	switch v := override.(type) {
 		case *oidc.StubProvider:
 			o.provider = v
 		case *store.MockSessionStore:
 			o.sessions = v
 		case *store.MockUserStore:
 			o.users = v
+		case store.UserStore:
+			o.users = v
+		case store.SessionStore:
+			o.sessions = v
 		}
 	}
 	return o
@@ -56,6 +60,10 @@ func NewState() string {
 	bytes := make([]byte, 32)
 	rand.Read(bytes)
 	return base64.RawURLEncoding.EncodeToString(bytes)
+}
+
+func NewOrchestration(provider OIDCProvider, sessions SessionStore, users UserStore) *Orchestration {
+	return &Orchestration{provider: provider, sessions: sessions, users: users}
 }
 
 func SetStateCookie(c *gin.Context, value string) {

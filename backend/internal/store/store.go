@@ -3,7 +3,9 @@ package store
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -83,4 +85,13 @@ func generateToken() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(bytes), nil
+}
+
+func NewDB() (*gorm.DB, error) {
+	dsn := fmt.Sprintf("host=localhost user=server password=server dbname=server port=5432 sslmode=disable")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	return db, nil
 }
