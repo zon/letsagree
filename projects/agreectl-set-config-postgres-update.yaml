@@ -119,4 +119,4 @@ requirements:
       - Rename the Port field to DBPort and name tag to "db-port" in SetConfig in agreectl/cmd/agreectl
       - Add RalphNamespace string field with name "ralph-namespace" and default "ralph-letsagree" to SetConfig in agreectl/cmd/agreectl
       - Update RunWith to populate opts.Opts DBHost, DBPort, and RalphNamespace from the corresponding SetConfig fields
-    passing: false
+    passing: true
