@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agreectl set config` writes local development config files by pulling secrets from a running Kubernetes cluster. This spec covers the postgres config: reading the CNPG app secret and writing `backend/config/postgres.json` with host and port replaced to be reachable from outside the cluster.
+`agreectl set config` writes local development config files by pulling secrets from a running Kubernetes cluster. This spec covers the postgres config: reading the CNPG app secret and writing `backend/config/postgres.json` with host and port replaced to be reachable from outside the cluster. It also copies the secret into the ralph namespace so backend workloads running there can access the database.
 
 ## Requirements
 
@@ -10,20 +10,22 @@
 - `agreectl` MUST expose a `set config` subcommand.
 - `set config` MUST accept the following flags:
 
-  | Flag          | Default         | Description                                      |
-  |---------------|-----------------|--------------------------------------------------|
-  | `--context`   | `microk8s`      | kubectl context to use                           |
-  | `--namespace` | `letsagree`     | Kubernetes namespace containing the secret       |
-  | `--db-secret` | `letsagree-app` | Name of the CNPG app secret                      |
-  | `--host`      | _(auto)_        | Override the external postgres host              |
-  | `--port`      | `30432`         | External NodePort for postgres                   |
+  | Flag                | Default           | Description                                              |
+  |---------------------|-------------------|----------------------------------------------------------|
+  | `--context`         | `microk8s`        | kubectl context to use                                   |
+  | `--namespace`       | `letsagree`       | Kubernetes namespace containing the secret               |
+  | `--ralph-namespace` | `ralph-letsagree` | Kubernetes namespace to copy the secret into             |
+  | `--db-secret`       | `letsagree-app`   | Name of the CNPG app secret                              |
+  | `--db-host`         | _(auto)_          | Override the external postgres host                      |
+  | `--db-port`         | `30432`           | External NodePort for postgres                           |
 
 - `set config` MUST read the following fields from the named Kubernetes secret: `host`, `port`, `user`, `password`, `dbname`.
-- When `--host` is not provided, `set config` MUST auto-detect the external host by querying the node list from the specified context and using the `InternalIP` of the first ready node.
+- When `--db-host` is not provided, `set config` MUST auto-detect the external host by querying the node list from the specified context and using the `InternalIP` of the first ready node.
+- `set config` MUST upsert the secret into `--ralph-namespace` after reading it, copying all fields unchanged.
 - `set config` MUST write `backend/config/postgres.json` relative to the repo root, creating `backend/config/` if it does not exist.
 - The written JSON MUST contain the fields `host`, `port`, `user`, `password`, and `dbname`.
 - The `host` field in the output MUST be the external host (auto-detected or overridden), not the in-cluster service name from the secret.
-- The `port` field in the output MUST be the `--port` value, not the in-cluster port from the secret.
+- The `port` field in the output MUST be the `--db-port` value, not the in-cluster port from the secret.
 - The `user`, `password`, and `dbname` fields MUST be copied from the secret unchanged.
 
 ## Scenarios
@@ -45,6 +47,12 @@ Then `backend/config/postgres.json` is written with:
 }
 ```
 
+### Scenario: copies secret to ralph namespace
+
+Given the secret `letsagree-app` exists in namespace `letsagree`  
+When `agreectl set config` is run  
+Then the secret is upserted into the `ralph-letsagree` namespace with the same field values
+
 ### Scenario: --host overrides auto-detection
 
 Given `agreectl set config` is run with `--host localhost`  
@@ -55,6 +63,11 @@ And the node list is not queried
 
 Given `agreectl set config` is run with `--context k3s-prod --namespace myns --db-secret myns-app`  
 Then the secret `myns-app` is fetched from namespace `myns` using context `k3s-prod`
+
+### Scenario: custom ralph-namespace
+
+Given `agreectl set config` is run with `--ralph-namespace infra`  
+Then the secret is upserted into namespace `infra`
 
 ### Scenario: output directory is created if missing
 

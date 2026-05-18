@@ -11,7 +11,8 @@ import (
 var version = "dev"
 
 var cli struct {
-	Addr string `name:"addr" default:":8080" help:"HTTP listen address."`
+	Addr      string `name:"addr" default:":8080" help:"HTTP listen address."`
+	ConfigDir string `name:"config" default:"config" help:"Path to config directory."`
 }
 
 func main() {
