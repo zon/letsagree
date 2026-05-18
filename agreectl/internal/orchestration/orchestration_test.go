@@ -57,3 +57,10 @@ func TestPostgres_usesOptsPort(t *testing.T) {
 	require.NoError(t, svc.Postgres(opts.WithDBPort(port)))
 	assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
 }
+
+func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
+	secret := cluster.AnySecret()
+	svc := withMocks(cluster.WithSecret(secret))
+	require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
+	assert.Equal(t, secret.Data(), cluster.UpsertedSecretData(t))
+}

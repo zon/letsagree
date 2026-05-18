@@ -13,6 +13,7 @@ type Orchestration struct {
 
 type K8sClient interface {
 	GetSecret(namespace, name string) (*cluster.Secret, error)
+	UpsertSecret(namespace, name string, data map[string]string) error
 	NodeIP() (string, error)
 }
 
@@ -30,6 +31,10 @@ func New(cluster K8sClient, files ConfigWriter) *Orchestration {
 func (o *Orchestration) Postgres(in opts.Opts) error {
 	secret, err := o.cluster.GetSecret(in.Namespace, in.DBSecret)
 	if err != nil {
+		return err
+	}
+
+	if err := o.cluster.UpsertSecret(in.RalphNamespace, in.DBSecret, secret.Data()); err != nil {
 		return err
 	}
 

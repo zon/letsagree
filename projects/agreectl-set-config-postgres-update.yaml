@@ -110,7 +110,7 @@ requirements:
             require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
             assert.Equal(t, secret.Data(), cluster.UpsertedSecretData(t))
           }
-    passing: false
+    passing: true
 
   - slug: cli-update
     description: Rename --host/--port to --db-host/--db-port and add --ralph-namespace to the set config command

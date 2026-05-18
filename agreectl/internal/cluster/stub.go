@@ -1,5 +1,7 @@
 package cluster
 
+import "testing"
+
 type StubK8sClient struct {
 	Secret    *Secret
 	RetNodeIP string
@@ -38,6 +40,7 @@ func (s *stubK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 }
 
 func (s *stubK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	capturedUpsertedSecretData = data
 	return s.upsertErr
 }
 
@@ -46,7 +49,7 @@ func (s *stubK8sClient) NodeIP() (string, error) {
 }
 
 func AnySecret() *Secret {
-	return &Secret{Data: map[string][]byte{
+	return &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -62,7 +65,7 @@ func AnyNodeIP() string {
 }
 
 func WithNodeIP(ip string) K8sClient {
-	return &stubK8sClient{nodeIP: ip, secret: &Secret{Data: map[string][]byte{
+	return &stubK8sClient{nodeIP: ip, secret: &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -70,7 +73,7 @@ func WithNodeIP(ip string) K8sClient {
 }
 
 func ThatFailsOnNodeIP() K8sClient {
-	return &stubK8sClient{nodeErr: assertNeverError{}, secret: &Secret{Data: map[string][]byte{
+	return &stubK8sClient{nodeErr: assertNeverError{}, secret: &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -78,7 +81,7 @@ func ThatFailsOnNodeIP() K8sClient {
 }
 
 func ThatFailsOnUpsert() K8sClient {
-	return &stubK8sClient{upsertErr: assertNeverUpsert{}, secret: &Secret{Data: map[string][]byte{
+	return &stubK8sClient{upsertErr: assertNeverUpsert{}, secret: &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -134,4 +137,11 @@ func WithSecretAndCapturing(secret *Secret) K8sClient {
 
 func CapturedGetSecret() (namespace, name string) {
 	return capturedCall.namespace, capturedCall.secret
+}
+
+func UpsertedSecretData(t testing.TB) map[string]string {
+	if capturedUpsertedSecretData == nil {
+		t.Fatal("UpsertSecret was not called")
+	}
+	return capturedUpsertedSecretData
 }
