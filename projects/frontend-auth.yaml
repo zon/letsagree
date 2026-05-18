@@ -24,7 +24,7 @@ requirements:
       - Implement renderHome(user) returning an HTML string for the authenticated home page; include a logout form that POSTs to /logout
       - Implement renderLogin() returning an HTML string with a "Login with Humanity Protocol" button that links to the backend GET /auth/login endpoint
       - Implement renderNotHuman() returning an HTML string indicating that biometric verification via Humanity Protocol is required
-    passing: false
+    passing: true
 
   - slug: orchestration-core
     description: PageResponse union type and assertion helpers used across all orchestration tests
