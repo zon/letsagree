@@ -4,17 +4,17 @@ title: backend auth — OIDC authentication via Humanity Protocol
 feature: specs/features/backend/auth
 
 requirements:
-  - slug: store
+- slug: store
     description: User and Session GORM models with Postgres-backed implementations of UserStore and SessionStore
     items:
       - Define User model in backend/internal/store with ID uint and Sub string fields; add a unique index on Sub
-      - Define Session model in backend/internal/store with ID uint, Token string, and UserID uint fields; add an index on Token
+      - Define Session model in backend/internal/store with ID uint, Token string, and UserID uint field; add an index on Token
       - Implement UserStore.Upsert(sub string) using GORM FirstOrCreate keyed on Sub
       - Implement SessionStore.Create(userID uint) generating a cryptographically random token, persisting the session, and returning the token
       - Implement SessionStore.Get(token string) returning the session or an error if not found
       - Implement SessionStore.Delete(token string) deleting the session row; ignore not-found errors
       - Add test helpers AnySession, WithSession, NoSessions, StubSessions, and StubUsers in backend/internal/store
-    passing: false
+    passing: true
 
   - slug: oidc-provider
     description: OIDC provider wrapping go-oidc/v3 and golang.org/x/oauth2, plus the IDToken domain type
