@@ -33,7 +33,7 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 		return err
 	}
 
-	host := in.Host
+	host := in.DBHost
 	if host == "" {
 		host, err = o.cluster.NodeIP()
 		if err != nil {
@@ -43,7 +43,7 @@ func (o *Orchestration) Postgres(in opts.Opts) error {
 
 	return o.files.WriteJSON(files.PostgresConfigPath, files.PostgresConfig{
 		Host:     host,
-		Port:     in.Port,
+		Port:     in.DBPort,
 		User:     secret.User(),
 		Password: secret.Password(),
 		DBName:   secret.DBName(),

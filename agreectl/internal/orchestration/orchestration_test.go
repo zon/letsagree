@@ -37,7 +37,7 @@ func TestPostgres_autoDetectsNodeIP(t *testing.T) {
 
 func TestPostgres_usesProvidedHost(t *testing.T) {
 	svc := withMocks(cluster.ThatFailsOnNodeIP())
-	require.NoError(t, svc.Postgres(opts.WithHost("localhost")))
+	require.NoError(t, svc.Postgres(opts.WithDBHost("localhost")))
 	assert.Equal(t, "localhost", files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
 }
 
@@ -52,8 +52,8 @@ func TestPostgres_copiesSecretFields(t *testing.T) {
 }
 
 func TestPostgres_usesOptsPort(t *testing.T) {
-	port := opts.AnyPort()
+	port := opts.AnyDBPort()
 	svc := withMocks()
-	require.NoError(t, svc.Postgres(opts.WithPort(port)))
+	require.NoError(t, svc.Postgres(opts.WithDBPort(port)))
 	assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
 }

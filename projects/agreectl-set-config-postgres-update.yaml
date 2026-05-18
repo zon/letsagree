@@ -11,7 +11,7 @@ requirements:
       - Add RalphNamespace string field to opts.Opts with default value "ralph-letsagree" in defaultOpts
       - Rename WithHost to WithDBHost, AnyPort to AnyDBPort, and WithPort to WithDBPort in agreectl/internal/opts
       - Add WithRalphNamespace(ns string) Opts constructor in agreectl/internal/opts
-    passing: false
+    passing: true
 
   - slug: secret-data
     description: Add Data() to cluster.Secret and UpsertSecret to K8sClient
