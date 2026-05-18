@@ -31,6 +31,7 @@ func TestCallback_rejectsNonHuman(t *testing.T) {
 	WithRequestCookie(c, "state", "abc")
 	svc.Callback(c)
 	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "biometric verification required")
 }
 
 func TestCallback_authenticatesHuman(t *testing.T) {
@@ -39,7 +40,22 @@ func TestCallback_authenticatesHuman(t *testing.T) {
 	WithRequestCookie(c, "state", "abc")
 	svc.Callback(c)
 	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Contains(t, w.Header().Get("Location"), "/")
 	assert.NotEmpty(t, SessionCookieValue(w))
+}
+
+func TestCallback_upsertsUserOnRelogin(t *testing.T) {
+	token := oidc.IDTokenWithSub("hp_abc")
+	users := store.StubUsers()
+	svc := WithMocks(oidc.NewStubProvider(token), users)
+	_, c := NewTestContext(http.MethodGet, "/auth/callback?code=xyz&state=abc")
+	WithRequestCookie(c, "state", "abc")
+	svc.Callback(c)
+	assert.Equal(t, "hp_abc", users.UpsertedSub(t))
+	_, c2 := NewTestContext(http.MethodGet, "/auth/callback?code=xyz&state=abc")
+	WithRequestCookie(c2, "state", "abc")
+	svc.Callback(c2)
+	assert.Equal(t, 1, len(users.Users()))
 }
 
 func TestCallback_upsertsUser(t *testing.T) {

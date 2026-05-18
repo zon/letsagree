@@ -36,6 +36,12 @@ func (m *MockUserStore) UpsertedSub(_ interface{}) string {
 	return m.upserted
 }
 
+func (m *MockUserStore) Users() map[string]User {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.users
+}
+
 func AnySession() *Session {
 	return &Session{
 		ID:     1,

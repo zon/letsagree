@@ -208,7 +208,7 @@ requirements:
             svc.Callback(c)
             assert.Equal(t, token.Sub(), users.UpsertedSub(t))
           }
-    passing: false
+    passing: true
 
   - slug: auth-require-auth
     description: RequireAuth middleware — validates session cookie and sets current user in context
