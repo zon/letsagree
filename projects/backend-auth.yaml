@@ -260,7 +260,7 @@ requirements:
             svc.RequireAuth(c)
             assert.Equal(t, session.UserID, CurrentUser(c))
           }
-    passing: false
+    passing: true
 
   - slug: auth-logout
     description: Logout handler — deletes session from Postgres and clears the session cookie

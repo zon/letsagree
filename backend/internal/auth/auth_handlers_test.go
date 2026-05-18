@@ -84,6 +84,22 @@ func TestRequireAuth_setsCurrentUser(t *testing.T) {
 	assert.Equal(t, session.UserID, CurrentUser(c))
 }
 
+func TestRequireAuth_noSession_returns401(t *testing.T) {
+	svc := WithMocks(store.NoSessions())
+	w, c := NewTestContext(http.MethodGet, "/protected")
+	svc.RequireAuth(c)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestRequireAuth_validSession_proceedsAndSetsCurrentUser(t *testing.T) {
+	session := store.AnySession()
+	svc := WithMocks(store.WithSession(session))
+	_, c := NewTestContext(http.MethodGet, "/protected")
+	WithRequestCookie(c, "session", session.Token)
+	svc.RequireAuth(c)
+	assert.Equal(t, session.UserID, CurrentUser(c))
+}
+
 func TestLogout_deletesSession(t *testing.T) {
 	sessions := store.StubSessions()
 	svc := WithMocks(sessions)
