@@ -7,6 +7,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 	"server/internal/auth"
 	"server/internal/oidc"
 	"server/internal/store"
@@ -41,23 +42,29 @@ func main() {
 	}
 
 	ctx := context.Background()
-	provider, err := oidc.NewProvider(ctx, cfg)
+	var provider auth.OIDCProvider
+	if cfg.IssuerURL != "" {
+		realProvider, err := oidc.NewProvider(ctx, cfg)
+		if err != nil {
+			log.Fatalf("failed to create OIDC provider: %v", err)
+		}
+		provider = realProvider
+	} else {
+		provider = oidc.NewStubProvider(oidc.AnyIDToken())
+	}
+
+	o := auth.NewOrchestration(provider, store.StubSessions(), store.StubUsers())
+
+	var db *gorm.DB
+	db, err = store.NewDB()
 	if err != nil {
-		log.Fatalf("failed to create OIDC provider: %v", err)
+		log.Printf("warning: could not connect to database, using stub stores: %v", err)
+	} else {
+		if err := db.AutoMigrate(&store.User{}, &store.Session{}); err != nil {
+			log.Fatalf("failed to migrate database: %v", err)
+		}
+		o = auth.NewOrchestration(provider, store.New(db), store.New(db))
 	}
-
-	db, err := store.NewDB()
-	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
-	}
-	if err := db.AutoMigrate(&store.User{}, &store.Session{}); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
-	}
-
-	sessions := store.New(db)
-	users := store.New(db)
-
-	o := auth.NewOrchestration(provider, sessions, users)
 
 	r := gin.Default()
 	RegisterRoutes(r, o)
