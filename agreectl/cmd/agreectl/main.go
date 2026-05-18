@@ -55,6 +55,9 @@ func (c *SetConfig) RunWith(newK8sClient func(string) (cluster.K8sClient, error)
 	}
 
 	svc := orchestration.New(k8s, cw)
+	if err := svc.Postgres(o); err != nil {
+		return err
+	}
 	return svc.HumanityProtocol(o)
 }
 
