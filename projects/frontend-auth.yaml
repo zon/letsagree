@@ -16,7 +16,7 @@ requirements:
       - Export backend.findingUser(user) returning a fetchUser stub that resolves to user
       - Export backend.userNotFound() returning a fetchUser stub that resolves to null
       - Export backend.thatLogsOut() returning a doLogout stub that resolves without error
-    passing: false
+    passing: true
 
   - slug: render-pages
     description: HTML render functions for the home, login, and not-human pages in frontend/src/render.ts
