@@ -67,6 +67,69 @@ func TestSecret_DBNameMissing(t *testing.T) {
 	}
 }
 
+func TestSecret_ClientID(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{"clientId": []byte("my-client-id")}}
+	if got := s.ClientID(); got != "my-client-id" {
+		t.Errorf("ClientID() = %q, want %q", got, "my-client-id")
+	}
+}
+
+func TestSecret_ClientIDEmpty(t *testing.T) {
+	s := &Secret{Bytes: nil}
+	if got := s.ClientID(); got != "" {
+		t.Errorf("ClientID() = %q, want %q", got, "")
+	}
+}
+
+func TestSecret_ClientIDMissing(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{}}
+	if got := s.ClientID(); got != "" {
+		t.Errorf("ClientID() = %q, want %q", got, "")
+	}
+}
+
+func TestSecret_ClientSecret(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{"clientSecret": []byte("my-client-secret")}}
+	if got := s.ClientSecret(); got != "my-client-secret" {
+		t.Errorf("ClientSecret() = %q, want %q", got, "my-client-secret")
+	}
+}
+
+func TestSecret_ClientSecretEmpty(t *testing.T) {
+	s := &Secret{Bytes: nil}
+	if got := s.ClientSecret(); got != "" {
+		t.Errorf("ClientSecret() = %q, want %q", got, "")
+	}
+}
+
+func TestSecret_ClientSecretMissing(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{}}
+	if got := s.ClientSecret(); got != "" {
+		t.Errorf("ClientSecret() = %q, want %q", got, "")
+	}
+}
+
+func TestSecret_PublicKey(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{"publicKey": []byte("my-public-key")}}
+	if got := s.PublicKey(); got != "my-public-key" {
+		t.Errorf("PublicKey() = %q, want %q", got, "my-public-key")
+	}
+}
+
+func TestSecret_PublicKeyEmpty(t *testing.T) {
+	s := &Secret{Bytes: nil}
+	if got := s.PublicKey(); got != "" {
+		t.Errorf("PublicKey() = %q, want %q", got, "")
+	}
+}
+
+func TestSecret_PublicKeyMissing(t *testing.T) {
+	s := &Secret{Bytes: map[string][]byte{}}
+	if got := s.PublicKey(); got != "" {
+		t.Errorf("PublicKey() = %q, want %q", got, "")
+	}
+}
+
 func TestSecret_StringData(t *testing.T) {
 	s := &Secret{Bytes: map[string][]byte{"user": []byte("admin"), "password": []byte("secret123")}}
 	got := s.StringData()

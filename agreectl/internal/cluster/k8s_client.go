@@ -37,6 +37,27 @@ func (s *Secret) DBName() string {
 	return string(s.Bytes["dbname"])
 }
 
+func (s *Secret) ClientID() string {
+	if s.Bytes == nil {
+		return ""
+	}
+	return string(s.Bytes["clientId"])
+}
+
+func (s *Secret) ClientSecret() string {
+	if s.Bytes == nil {
+		return ""
+	}
+	return string(s.Bytes["clientSecret"])
+}
+
+func (s *Secret) PublicKey() string {
+	if s.Bytes == nil {
+		return ""
+	}
+	return string(s.Bytes["publicKey"])
+}
+
 func (s *Secret) StringData() map[string]string {
 	if s.Bytes == nil {
 		return nil
