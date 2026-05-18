@@ -4,7 +4,7 @@ title: backend auth — OIDC authentication via Humanity Protocol
 feature: specs/features/backend/auth
 
 requirements:
-- slug: store
+  - slug: store
     description: User and Session GORM models with Postgres-backed implementations of UserStore and SessionStore
     items:
       - Define User model in backend/internal/store with ID uint and Sub string fields; add a unique index on Sub
