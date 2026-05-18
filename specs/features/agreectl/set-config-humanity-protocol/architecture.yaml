@@ -1,0 +1,34 @@
+modules:
+  - path: agreectl/internal/orchestration
+    orchestration: true
+    description: >
+      Gains a HumanityProtocol method that resolves credentials from an env file
+      or cluster secret, conditionally upserts the cluster secret, and writes the
+      local YAML config. Extends the K8sClient interface with UpsertSecret and the
+      ConfigWriter interface with WriteYAML and ParseHPEnv.
+
+  - path: agreectl/internal/opts
+    description: >
+      Gains HP-specific fields: RalphNamespace, HPSecret, HPEnvFile, OIDCIssuer,
+      and OIDCRedirect. Adds constructors AnyHP, WithHPEnvFile, and
+      WithOIDCOptions for use in tests.
+
+  - path: agreectl/internal/cluster
+    description: >
+      Gains UpsertSecret to create or update a Kubernetes secret by name. Secret
+      gains ClientID, ClientSecret, and PublicKey accessors for reading HP
+      credential fields. Adds test helpers AnyHPSecret, ThatFailsOnGetSecret,
+      ThatFailsOnUpsert, and UpsertedSecretData.
+
+  - path: agreectl/internal/files
+    description: >
+      Gains WriteYAML for writing YAML config files and ParseHPEnv for reading
+      Humanity Protocol env files into HPCredentials. Adds HPCredentials with a
+      ToSecretData method, HumanityProtocolConfig, and HumanityProtocolConfigPath.
+      Adds test helpers AnyHPCredentials, WithHPEnv, and WrittenYAMLAt.
+
+  - path: agreectl/cmd/agreectl
+    description: >
+      Gains the --ralph-namespace, --hp-secret, --hp-env, --oidc-issuer, and
+      --oidc-redirect flags and wires them into opts.Opts before calling
+      HumanityProtocol on the orchestration.
