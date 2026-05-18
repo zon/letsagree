@@ -6,6 +6,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/applyconfigurations/core/v1"
+	metav1config "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -35,8 +37,20 @@ func (s *Secret) DBName() string {
 	return string(s.Data["dbname"])
 }
 
+func (s *Secret) StringData() map[string]string {
+	if s.Data == nil {
+		return nil
+	}
+	result := make(map[string]string, len(s.Data))
+	for k, v := range s.Data {
+		result[k] = string(v)
+	}
+	return result
+}
+
 type K8sClient interface {
 	GetSecret(namespace, name string) (*Secret, error)
+	UpsertSecret(namespace, name string, data map[string]string) error
 	NodeIP() (string, error)
 }
 
@@ -72,6 +86,31 @@ func (c *realK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 		return nil, err
 	}
 	return &Secret{Data: secret.Data}, nil
+}
+
+func (c *realK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	secretData := make(map[string][]byte, len(data))
+	for k, v := range data {
+		secretData[k] = []byte(v)
+	}
+	secret := "Secret"
+	apiVersion := "v1"
+	secretApplyConfig := v1.SecretApplyConfiguration{
+		TypeMetaApplyConfiguration: metav1config.TypeMetaApplyConfiguration{
+			Kind:       &secret,
+			APIVersion: &apiVersion,
+		},
+		ObjectMetaApplyConfiguration: &metav1config.ObjectMetaApplyConfiguration{
+			Name:      &name,
+			Namespace: &namespace,
+		},
+		Data: secretData,
+	}
+	_, err := c.clientset.CoreV1().Secrets(namespace).Apply(context.Background(), &secretApplyConfig, metav1.ApplyOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *realK8sClient) NodeIP() (string, error) {

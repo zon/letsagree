@@ -22,7 +22,7 @@ requirements:
       - Add UpsertSecret to stubK8sClient and capturingK8sClient with a no-op implementation in agreectl/internal/cluster
       - Add ThatFailsOnUpsert() K8sClient test helper that fails the test if UpsertSecret is called in agreectl/internal/cluster
       - Add UpsertedSecretData(t) map[string]string test helper that returns the data from the most recent UpsertSecret call; fails the test if no upsert occurred in agreectl/internal/cluster
-    passing: false
+    passing: true
 
   - slug: postgres-orchestration
     description: Update Postgres orchestration to copy secret to ralph namespace and use renamed opts fields
