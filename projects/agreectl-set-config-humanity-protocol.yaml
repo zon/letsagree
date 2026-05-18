@@ -9,7 +9,7 @@ requirements:
     items:
       - Add RalphNamespace (default "ralph-letsagree"), HPSecret (default "humanity-protocol"), HPEnvFile, OIDCIssuer (default "https://api.sandbox.humanity.org/v2"), and OIDCRedirect fields to opts.Opts
       - Add AnyHP, WithHPEnvFile, and WithOIDCOptions constructors in agreectl/internal/opts
-    passing: false
+    passing: true
 
   - slug: cluster-hp
     description: Add UpsertSecret to the cluster client and HP credential accessors to Secret
