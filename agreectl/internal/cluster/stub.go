@@ -1,9 +1,12 @@
 package cluster
 
+import "testing"
+
 type StubK8sClient struct {
 	Secret    *Secret
 	RetNodeIP string
 	NodeErr   error
+	UpsertErr error
 	Calls     struct {
 		Namespace string
 		Secret    string
@@ -16,19 +19,29 @@ func (s *StubK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 	return s.Secret, s.NodeErr
 }
 
+func (s *StubK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	return s.UpsertErr
+}
+
 func (s *StubK8sClient) NodeIP() (string, error) {
 	return s.RetNodeIP, s.NodeErr
 }
 
 type stubK8sClient struct {
-	secret  *Secret
-	nodeIP  string
-	nodeErr error
-	secErr  error
+	secret    *Secret
+	nodeIP    string
+	nodeErr   error
+	secErr    error
+	upsertErr error
 }
 
 func (s *stubK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 	return s.secret, s.secErr
+}
+
+func (s *stubK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	capturedUpsertedSecretData = data
+	return s.upsertErr
 }
 
 func (s *stubK8sClient) NodeIP() (string, error) {
@@ -36,7 +49,7 @@ func (s *stubK8sClient) NodeIP() (string, error) {
 }
 
 func AnySecret() *Secret {
-	return &Secret{Data: map[string][]byte{
+	return &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -52,7 +65,7 @@ func AnyNodeIP() string {
 }
 
 func WithNodeIP(ip string) K8sClient {
-	return &stubK8sClient{nodeIP: ip, secret: &Secret{Data: map[string][]byte{
+	return &stubK8sClient{nodeIP: ip, secret: &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -60,7 +73,15 @@ func WithNodeIP(ip string) K8sClient {
 }
 
 func ThatFailsOnNodeIP() K8sClient {
-	return &stubK8sClient{nodeErr: assertNeverError{}, secret: &Secret{Data: map[string][]byte{
+	return &stubK8sClient{nodeErr: assertNeverError{}, secret: &Secret{Bytes: map[string][]byte{
+		"user":     []byte("app"),
+		"password": []byte("secret"),
+		"dbname":   []byte("app"),
+	}}}
+}
+
+func ThatFailsOnUpsert() K8sClient {
+	return &stubK8sClient{upsertErr: assertNeverUpsert{}, secret: &Secret{Bytes: map[string][]byte{
 		"user":     []byte("app"),
 		"password": []byte("secret"),
 		"dbname":   []byte("app"),
@@ -73,10 +94,18 @@ func (assertNeverError) Error() string {
 	return "NodeIP should not be called"
 }
 
+type assertNeverUpsert struct{}
+
+func (assertNeverUpsert) Error() string {
+	return "UpsertSecret should not be called"
+}
+
 var capturedCall struct {
 	namespace string
 	secret    string
 }
+
+var capturedUpsertedSecretData map[string]string
 
 type capturingK8sClient struct {
 	secret  *Secret
@@ -88,6 +117,11 @@ func (c *capturingK8sClient) GetSecret(namespace, name string) (*Secret, error) 
 	capturedCall.namespace = namespace
 	capturedCall.secret = name
 	return c.secret, nil
+}
+
+func (c *capturingK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	capturedUpsertedSecretData = data
+	return nil
 }
 
 func (c *capturingK8sClient) NodeIP() (string, error) {
@@ -103,4 +137,11 @@ func WithSecretAndCapturing(secret *Secret) K8sClient {
 
 func CapturedGetSecret() (namespace, name string) {
 	return capturedCall.namespace, capturedCall.secret
+}
+
+func UpsertedSecretData(t testing.TB) map[string]string {
+	if capturedUpsertedSecretData == nil {
+		t.Fatal("UpsertSecret was not called")
+	}
+	return capturedUpsertedSecretData
 }

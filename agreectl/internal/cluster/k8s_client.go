@@ -6,37 +6,55 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/applyconfigurations/core/v1"
+	metav1config "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type Secret struct {
-	Data map[string][]byte
+	Bytes map[string][]byte
 }
 
 func (s *Secret) User() string {
-	if s.Data == nil {
+	if s.Bytes == nil {
 		return ""
 	}
-	return string(s.Data["user"])
+	return string(s.Bytes["user"])
 }
 
 func (s *Secret) Password() string {
-	if s.Data == nil {
+	if s.Bytes == nil {
 		return ""
 	}
-	return string(s.Data["password"])
+	return string(s.Bytes["password"])
 }
 
 func (s *Secret) DBName() string {
-	if s.Data == nil {
+	if s.Bytes == nil {
 		return ""
 	}
-	return string(s.Data["dbname"])
+	return string(s.Bytes["dbname"])
+}
+
+func (s *Secret) StringData() map[string]string {
+	if s.Bytes == nil {
+		return nil
+	}
+	result := make(map[string]string, len(s.Bytes))
+	for k, v := range s.Bytes {
+		result[k] = string(v)
+	}
+	return result
+}
+
+func (s *Secret) Data() map[string]string {
+	return s.StringData()
 }
 
 type K8sClient interface {
 	GetSecret(namespace, name string) (*Secret, error)
+	UpsertSecret(namespace, name string, data map[string]string) error
 	NodeIP() (string, error)
 }
 
@@ -71,7 +89,32 @@ func (c *realK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Secret{Data: secret.Data}, nil
+	return &Secret{Bytes: secret.Data}, nil
+}
+
+func (c *realK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
+	secretData := make(map[string][]byte, len(data))
+	for k, v := range data {
+		secretData[k] = []byte(v)
+	}
+	secret := "Secret"
+	apiVersion := "v1"
+	secretApplyConfig := v1.SecretApplyConfiguration{
+		TypeMetaApplyConfiguration: metav1config.TypeMetaApplyConfiguration{
+			Kind:       &secret,
+			APIVersion: &apiVersion,
+		},
+		ObjectMetaApplyConfiguration: &metav1config.ObjectMetaApplyConfiguration{
+			Name:      &name,
+			Namespace: &namespace,
+		},
+		Data: secretData,
+	}
+	_, err := c.clientset.CoreV1().Secrets(namespace).Apply(context.Background(), &secretApplyConfig, metav1.ApplyOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *realK8sClient) NodeIP() (string, error) {

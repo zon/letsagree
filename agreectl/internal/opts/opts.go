@@ -1,37 +1,45 @@
 package opts
 
 type Opts struct {
-	Context   string
-	Namespace string
-	DBSecret  string
-	Host      string
-	Port      int
+	Context         string
+	Namespace       string
+	DBSecret        string
+	DBHost          string
+	DBPort          int
+	RalphNamespace  string
 }
 
 var defaultOpts = Opts{
-	Context:   "microk8s",
-	Namespace: "letsagree",
-	DBSecret:  "letsagree-app",
-	Port:      30432,
+	Context:        "microk8s",
+	Namespace:      "letsagree",
+	DBSecret:       "letsagree-app",
+	DBPort:         30432,
+	RalphNamespace: "ralph-letsagree",
 }
 
 func Any() Opts {
 	return defaultOpts
 }
 
-func WithHost(host string) Opts {
+func WithDBHost(host string) Opts {
 	o := defaultOpts
-	o.Host = host
+	o.DBHost = host
 	return o
 }
 
-func AnyPort() int {
-	return defaultOpts.Port
+func AnyDBPort() int {
+	return defaultOpts.DBPort
 }
 
-func WithPort(port int) Opts {
+func WithDBPort(port int) Opts {
 	o := defaultOpts
-	o.Port = port
+	o.DBPort = port
+	return o
+}
+
+func WithRalphNamespace(ns string) Opts {
+	o := defaultOpts
+	o.RalphNamespace = ns
 	return o
 }
 

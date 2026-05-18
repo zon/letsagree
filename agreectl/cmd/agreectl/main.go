@@ -19,11 +19,12 @@ type SetCmd struct {
 }
 
 type SetConfig struct {
-	Context   string `name:"context" default:"microk8s" help:"Kubernetes context"`
-	Namespace string `name:"namespace" default:"letsagree" help:"Kubernetes namespace"`
-	DBSecret  string `name:"db-secret" default:"letsagree-app" help:"Secret name for DB credentials"`
-	Host      string `name:"host" help:"Database host (optional, auto-detected if not set)"`
-	Port      int    `name:"port" default:"30432" help:"Database port"`
+	Context         string `name:"context" default:"microk8s" help:"Kubernetes context"`
+	Namespace       string `name:"namespace" default:"letsagree" help:"Kubernetes namespace"`
+	DBSecret        string `name:"db-secret" default:"letsagree-app" help:"Secret name for DB credentials"`
+	DBHost          string `name:"db-host" help:"Database host (optional, auto-detected if not set)"`
+	DBPort          int    `name:"db-port" default:"30432" help:"Database port"`
+	RalphNamespace   string `name:"ralph-namespace" default:"ralph-letsagree" help:"Namespace where Ralph is deployed"`
 }
 
 func (c *SetConfig) Run() error {
@@ -32,11 +33,12 @@ func (c *SetConfig) Run() error {
 
 func (c *SetConfig) RunWith(newK8sClient func(string) (cluster.K8sClient, error), cw files.ConfigWriter) error {
 	o := opts.Opts{
-		Context:   c.Context,
-		Namespace: c.Namespace,
-		DBSecret:  c.DBSecret,
-		Host:      c.Host,
-		Port:      c.Port,
+		Context:        c.Context,
+		Namespace:      c.Namespace,
+		DBSecret:       c.DBSecret,
+		DBHost:         c.DBHost,
+		DBPort:         c.DBPort,
+		RalphNamespace: c.RalphNamespace,
 	}
 
 	k8s, err := newK8sClient(o.Context)

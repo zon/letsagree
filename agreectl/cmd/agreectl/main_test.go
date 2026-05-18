@@ -19,7 +19,7 @@ func TestSetConfig_customContextNamespaceAndSecret(t *testing.T) {
 		Context:   "k3s-prod",
 		Namespace: "myns",
 		DBSecret:  "myns-app",
-		Port:      30432,
+		DBPort:    30432,
 	}
 
 	require.NoError(t, cfg.RunWith(func(_ string) (cluster.K8sClient, error) {
