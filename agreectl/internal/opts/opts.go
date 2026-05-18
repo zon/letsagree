@@ -4,7 +4,6 @@ type Opts struct {
 	Context        string
 	Namespace      string
 	DBSecret       string
-	DBHost         string
 	DBPort         int
 	RalphNamespace string
 	PostgresSecret string
@@ -27,12 +26,6 @@ var defaultOpts = Opts{
 
 func Any() Opts {
 	return defaultOpts
-}
-
-func WithDBHost(host string) Opts {
-	o := defaultOpts
-	o.DBHost = host
-	return o
 }
 
 func AnyDBPort() int {

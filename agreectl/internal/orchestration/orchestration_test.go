@@ -32,17 +32,29 @@ func WithMocks(overrides ...any) *Orchestration {
 	return withMocks(overrides...)
 }
 
-func TestPostgres_autoDetectsNodeIP(t *testing.T) {
+func TestPostgres_localFile_usesNodeIPAndNodePort(t *testing.T) {
 	ip := cluster.AnyNodeIP()
+	port := opts.AnyDBPort()
 	svc := withMocks(cluster.WithNodeIP(ip))
-	require.NoError(t, svc.Postgres(opts.Any()))
-	assert.Equal(t, ip, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
+	require.NoError(t, svc.Postgres(opts.WithDBPort(port)))
+	cfg := files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{})
+	assert.Equal(t, ip, cfg.Host)
+	assert.Equal(t, port, cfg.Port)
 }
 
-func TestPostgres_usesProvidedHost(t *testing.T) {
-	svc := withMocks(cluster.ThatFailsOnNodeIP())
-	require.NoError(t, svc.Postgres(opts.WithDBHost("localhost")))
-	assert.Equal(t, "localhost", files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Host)
+func TestPostgres_clusterSecret_usesQualifiedHostAndSecretPort(t *testing.T) {
+	s := cluster.AnySecret()
+	o := opts.Any()
+	svc := withMocks(cluster.WithSecret(s))
+	require.NoError(t, svc.Postgres(o))
+	expected := files.PostgresConfig{
+		Host:     s.QualifiedHost(o.Namespace),
+		Port:     s.Port(),
+		User:     s.User(),
+		Password: s.Password(),
+		DBName:   s.DBName(),
+	}
+	assert.Equal(t, expected.ToSecretData(), cluster.UpsertedSecretData(t))
 }
 
 func TestPostgres_copiesSecretFields(t *testing.T) {
@@ -53,26 +65,6 @@ func TestPostgres_copiesSecretFields(t *testing.T) {
 	assert.Equal(t, s.User(), cfg.User)
 	assert.Equal(t, s.Password(), cfg.Password)
 	assert.Equal(t, s.DBName(), cfg.DBName)
-}
-
-func TestPostgres_usesOptsPort(t *testing.T) {
-	port := opts.AnyDBPort()
-	svc := withMocks()
-	require.NoError(t, svc.Postgres(opts.WithDBPort(port)))
-	assert.Equal(t, port, files.WrittenAt(t, files.PostgresConfigPath, &files.PostgresConfig{}).Port)
-}
-
-func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
-	secret := cluster.AnySecret()
-	svc := withMocks(cluster.WithSecret(secret))
-	require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
-	expected := files.PostgresConfig{
-		Port:     opts.AnyDBPort(),
-		User:     secret.User(),
-		Password: secret.Password(),
-		DBName:   secret.DBName(),
-	}
-	assert.Equal(t, expected.ToSecretData(), cluster.UpsertedSecretData(t))
 }
 
 func TestHumanityProtocol_envFileUpsertClusterSecret(t *testing.T) {

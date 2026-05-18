@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,6 +36,25 @@ func (s *Secret) DBName() string {
 		return ""
 	}
 	return string(s.Bytes["dbname"])
+}
+
+func (s *Secret) Host() string {
+	if s.Bytes == nil {
+		return ""
+	}
+	return string(s.Bytes["host"])
+}
+
+func (s *Secret) Port() int {
+	if s.Bytes == nil {
+		return 0
+	}
+	port, _ := strconv.Atoi(string(s.Bytes["port"]))
+	return port
+}
+
+func (s *Secret) QualifiedHost(namespace string) string {
+	return s.Host() + "." + namespace
 }
 
 func (s *Secret) ClientID() string {
@@ -113,6 +133,25 @@ func (c *realK8sClient) GetSecret(namespace, name string) (*Secret, error) {
 	return &Secret{Bytes: secret.Data}, nil
 }
 
+func (c *realK8sClient) NodeIP() (string, error) {
+	nodes, err := c.clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, node := range nodes.Items {
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+				for _, addr := range node.Status.Addresses {
+					if addr.Type == corev1.NodeInternalIP {
+						return addr.Address, nil
+					}
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("no ready node with internal IP found")
+}
+
 func (c *realK8sClient) UpsertSecret(namespace, name string, data map[string]string) error {
 	secretData := make(map[string][]byte, len(data))
 	for k, v := range data {
@@ -141,21 +180,3 @@ func (c *realK8sClient) UpsertSecret(namespace, name string, data map[string]str
 	return nil
 }
 
-func (c *realK8sClient) NodeIP() (string, error) {
-	nodes, err := c.clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-	for _, node := range nodes.Items {
-		for _, cond := range node.Status.Conditions {
-			if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
-				for _, addr := range node.Status.Addresses {
-					if addr.Type == corev1.NodeInternalIP {
-						return addr.Address, nil
-					}
-				}
-			}
-		}
-	}
-	return "", fmt.Errorf("no ready node with internal IP found")
-}
