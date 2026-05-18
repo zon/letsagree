@@ -25,7 +25,7 @@ requirements:
       - Exchange must verify the ID token signature via JWKS and return a domain IDToken
       - Add a config loader in backend/internal/oidc that reads backend/config/humanity-protocol.yaml into a typed struct
       - Add test helpers AnyIDToken, IDTokenWithIsHuman, and StubProvider in backend/internal/oidc
-    passing: false
+    passing: true
 
   - slug: auth-core
     description: Orchestration struct, interfaces, cookie helpers, and test infrastructure shared by all auth handlers

@@ -24,6 +24,10 @@ func (t *IDToken) Raw() *oidc.IDToken {
 	return t.raw
 }
 
+func NewIDToken(sub string, isHuman bool, raw *oidc.IDToken) *IDToken {
+	return &IDToken{sub: sub, isHuman: isHuman, raw: raw}
+}
+
 type StubProvider struct {
 	token *IDToken
 }
@@ -46,4 +50,8 @@ func AnyIDToken() *IDToken {
 
 func IDTokenWithIsHuman(isHuman bool) *IDToken {
 	return &IDToken{sub: "hp_test_sub", isHuman: isHuman}
+}
+
+func IDTokenWithSub(sub string) *IDToken {
+	return &IDToken{sub: sub, isHuman: true}
 }
