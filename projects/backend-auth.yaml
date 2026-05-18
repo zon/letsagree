@@ -94,7 +94,7 @@ requirements:
             assert.Equal(t, http.StatusFound, w.Code)
             assert.NotEmpty(t, StateCookieValue(w))
           }
-    passing: false
+    passing: true
 
   - slug: auth-callback
     description: Callback handler — validates state, exchanges code, checks is_human, upserts user, creates session
