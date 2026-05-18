@@ -41,7 +41,7 @@ requirements:
       - Implement assertRendersHome(response, user) asserting response.type === "html" and content includes home page markers for user
       - Implement assertRendersLogin(response) asserting response.type === "html" and content includes the login page marker
       - Implement assertRendersNotHuman(response) asserting response.type === "html" and content includes the biometric error marker
-    passing: false
+    passing: true
 
   - slug: home-page
     description: homePage handler — gates the authenticated home page on a valid session, redirects to login otherwise

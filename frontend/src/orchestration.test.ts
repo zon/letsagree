@@ -1,5 +1,12 @@
 import { describe, test, expect } from "bun:test"
-import { aboutPage } from "./orchestration"
+import {
+  aboutPage,
+  assertRedirectsTo,
+  assertRendersHome,
+  assertRendersLogin,
+  assertRendersNotHuman,
+  PageResponse,
+} from "./orchestration"
 
 const backendReturning =
   (version: string) => async () => version
@@ -19,6 +26,120 @@ function assertContainsBackendVersion(html: string, version: string) {
 function assertBackendVersionUnavailable(html: string) {
   expect(html).toContain("unavailable")
 }
+
+describe("assertRedirectsTo", () => {
+  test("passes when response is a redirect to the expected path", () => {
+    const response: PageResponse = { type: "redirect", to: "/login" }
+    expect(() => assertRedirectsTo(response, "/login")).not.toThrow()
+  })
+
+  test("throws when response type is not redirect", () => {
+    const response: PageResponse = { type: "html", content: "<p>test</p>" }
+    expect(() => assertRedirectsTo(response, "/login")).toThrow(
+      "Expected redirect to /login but got html",
+    )
+  })
+
+  test("throws when redirect target does not match", () => {
+    const response: PageResponse = { type: "redirect", to: "/" }
+    expect(() => assertRedirectsTo(response, "/login")).toThrow(
+      "Expected redirect to /login but got redirect to /",
+    )
+  })
+})
+
+describe("assertRendersHome", () => {
+  test("passes when response is html containing home page markers", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Welcome, Alice</p><form action=\"/logout\" method=\"POST\">",
+    }
+    expect(() =>
+      assertRendersHome(response, { id: "1", name: "Alice", email: "alice@example.com" })
+    ).not.toThrow()
+  })
+
+  test("throws when response type is not html", () => {
+    const response: PageResponse = { type: "redirect", to: "/login" }
+    expect(() =>
+      assertRendersHome(response, { id: "1", name: "Alice", email: "alice@example.com" })
+    ).toThrow("Expected html but got redirect")
+  })
+
+  test("throws when content does not include user name", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Welcome</p><form action=\"/logout\" method=\"POST\">",
+    }
+    expect(() =>
+      assertRendersHome(response, { id: "1", name: "Alice", email: "alice@example.com" })
+    ).toThrow("Home page content missing expected user name")
+  })
+
+  test("throws when content does not include logout form", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Welcome, Alice</p>",
+    }
+    expect(() =>
+      assertRendersHome(response, { id: "1", name: "Alice", email: "alice@example.com" })
+    ).toThrow("Home page content missing logout form")
+  })
+})
+
+describe("assertRendersLogin", () => {
+  test("passes when response is html containing login page marker", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<button>Login with Humanity Protocol</button>",
+    }
+    expect(() => assertRendersLogin(response)).not.toThrow()
+  })
+
+  test("throws when response type is not html", () => {
+    const response: PageResponse = { type: "redirect", to: "/login" }
+    expect(() => assertRendersLogin(response)).toThrow(
+      "Expected html but got redirect",
+    )
+  })
+
+  test("throws when content does not include login button", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Welcome</p>",
+    }
+    expect(() => assertRendersLogin(response)).toThrow(
+      "Login page content missing expected marker",
+    )
+  })
+})
+
+describe("assertRendersNotHuman", () => {
+  test("passes when response is html containing biometric error marker", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Biometric verification required</p>",
+    }
+    expect(() => assertRendersNotHuman(response)).not.toThrow()
+  })
+
+  test("throws when response type is not html", () => {
+    const response: PageResponse = { type: "redirect", to: "/not-human" }
+    expect(() => assertRendersNotHuman(response)).toThrow(
+      "Expected html but got redirect",
+    )
+  })
+
+  test("throws when content does not include biometric error marker", () => {
+    const response: PageResponse = {
+      type: "html",
+      content: "<p>Error</p>",
+    }
+    expect(() => assertRendersNotHuman(response)).toThrow(
+      "Not human page content missing expected biometric marker",
+    )
+  })
+})
 
 describe("GET /about shows both versions when backend is available", () => {
   test("about page shows both versions when backend is available", async () => {
