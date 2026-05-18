@@ -5,8 +5,10 @@ import {
   assertRendersHome,
   assertRendersLogin,
   assertRendersNotHuman,
+  homePage,
   PageResponse,
 } from "./orchestration"
+import { sessions, users, backend } from "./backend"
 
 const backendReturning =
   (version: string) => async () => version
@@ -138,6 +140,24 @@ describe("assertRendersNotHuman", () => {
     expect(() => assertRendersNotHuman(response)).toThrow(
       "Not human page content missing expected biometric marker",
     )
+  })
+})
+
+describe("homePage", () => {
+  test("home page redirects to login when session cookie is absent", async () => {
+    const response = await homePage(sessions.absent(), backend.userNotFound())
+    assertRedirectsTo(response, "/login")
+  })
+
+  test("home page redirects to login when session is invalid", async () => {
+    const response = await homePage(sessions.any(), backend.userNotFound())
+    assertRedirectsTo(response, "/login")
+  })
+
+  test("home page renders for authenticated user", async () => {
+    const user = users.any()
+    const response = await homePage(sessions.any(), backend.findingUser(user))
+    assertRendersHome(response, user)
   })
 })
 

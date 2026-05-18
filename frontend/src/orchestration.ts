@@ -1,4 +1,4 @@
-import { renderAbout } from "./render.js"
+import { renderAbout, renderHome } from "./render.js"
 import type { User } from "./backend.js"
 
 export type PageResponse =
@@ -50,4 +50,14 @@ export async function aboutPage(
 ): Promise<string> {
 	const backendVersion = await fetchBackendVersion()
 	return renderAbout(frontendVersion, backendVersion)
+}
+
+export async function homePage(
+	session: string | null,
+	fetchUser: () => Promise<User | null>,
+): Promise<PageResponse> {
+	if (!session) return { type: "redirect", to: "/login" }
+	const user = await fetchUser()
+	if (!user) return { type: "redirect", to: "/login" }
+	return { type: "html", content: renderHome(user) }
 }
