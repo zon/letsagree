@@ -28,6 +28,10 @@ func withMocks(overrides ...any) *Orchestration {
 	return New(k8s, cw)
 }
 
+func WithMocks(overrides ...any) *Orchestration {
+	return withMocks(overrides...)
+}
+
 func TestPostgres_autoDetectsNodeIP(t *testing.T) {
 	ip := cluster.AnyNodeIP()
 	svc := withMocks(cluster.WithNodeIP(ip))
@@ -63,4 +67,47 @@ func TestPostgres_copiesSecretToRalphNamespace(t *testing.T) {
 	svc := withMocks(cluster.WithSecret(secret))
 	require.NoError(t, svc.Postgres(opts.WithRalphNamespace("ralph-letsagree")))
 	assert.Equal(t, secret.Data(), cluster.UpsertedSecretData(t))
+}
+
+func TestHumanityProtocol_envFileUpsertClusterSecret(t *testing.T) {
+	creds := files.AnyHPCredentials()
+	svc := withMocks(
+		cluster.ThatFailsOnGetSecret(),
+		files.WithHPEnv(creds),
+	)
+	require.NoError(t, svc.HumanityProtocol(opts.WithHPEnvFile("any.env")))
+	assert.Equal(t, creds.ToSecretData(), cluster.UpsertedSecretData(t))
+}
+
+func TestHumanityProtocol_envFileWritesLocalConfig(t *testing.T) {
+	creds := files.AnyHPCredentials()
+	svc := withMocks(files.WithHPEnv(creds))
+	require.NoError(t, svc.HumanityProtocol(opts.WithHPEnvFile("any.env")))
+	cfg := files.WrittenYAMLAt(t, files.HumanityProtocolConfigPath, &files.HumanityProtocolConfig{})
+	assert.Equal(t, creds.ClientID, cfg.ClientID)
+	assert.Equal(t, creds.ClientSecret, cfg.ClientSecret)
+	assert.Equal(t, creds.PublicKey, cfg.PublicKey)
+}
+
+func TestHumanityProtocol_secretPresentWritesLocalConfig(t *testing.T) {
+	secret := cluster.AnyHPSecret()
+	svc := withMocks(cluster.WithSecret(secret))
+	require.NoError(t, svc.HumanityProtocol(opts.AnyHP()))
+	cfg := files.WrittenYAMLAt(t, files.HumanityProtocolConfigPath, &files.HumanityProtocolConfig{})
+	assert.Equal(t, secret.ClientID(), cfg.ClientID)
+	assert.Equal(t, secret.ClientSecret(), cfg.ClientSecret)
+	assert.Equal(t, secret.PublicKey(), cfg.PublicKey)
+}
+
+func TestHumanityProtocol_secretPresentSkipsUpsert(t *testing.T) {
+	svc := withMocks(cluster.ThatFailsOnUpsert())
+	require.NoError(t, svc.HumanityProtocol(opts.AnyHP()))
+}
+
+func TestHumanityProtocol_writesOIDCOptions(t *testing.T) {
+	svc := withMocks()
+	require.NoError(t, svc.HumanityProtocol(opts.WithOIDCOptions("https://issuer.example.com", "https://app.example.com/auth/callback")))
+	cfg := files.WrittenYAMLAt(t, files.HumanityProtocolConfigPath, &files.HumanityProtocolConfig{})
+	assert.Equal(t, "https://issuer.example.com", cfg.IssuerURL)
+	assert.Equal(t, "https://app.example.com/auth/callback", cfg.RedirectURL)
 }
