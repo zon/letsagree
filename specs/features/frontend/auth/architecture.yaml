@@ -1,0 +1,30 @@
+modules:
+  - path: frontend/src/orchestration.ts
+    orchestration: true
+    description: >
+      Gains four route handlers: homePage, loginPage, notHumanPage, and logout.
+      Defines the PageResponse union type ({ type: "html"; content: string } |
+      { type: "redirect"; to: string }) used by all handlers to return either
+      rendered HTML or a redirect target.
+
+  - path: frontend/src/backend.ts
+    description: >
+      Gains fetchUser (retrieves the authenticated User for a session token,
+      returning null if the session is absent or invalid) and logout (sends
+      POST /auth/logout to the backend). Defines the User domain type.
+      Provides test helpers: sessions.any, sessions.absent, users.any,
+      backend.findingUser, backend.userNotFound, and backend.thatLogsOut.
+
+  - path: frontend/src/render.ts
+    description: >
+      Gains renderHome (authenticated home page with a logout form),
+      renderLogin (login page with a Humanity Protocol login button), and
+      renderNotHuman (biometric verification error page).
+
+  - path: frontend/src/index.ts
+    description: >
+      Gains route registrations for GET / (homePage), GET /login (loginPage),
+      GET /not-human (notHumanPage), and POST /logout (logout). Wires the
+      session cookie, backend URL, and backend client functions into each
+      orchestration call and translates PageResponse values into Elysia
+      responses.
