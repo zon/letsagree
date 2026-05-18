@@ -61,7 +61,7 @@ requirements:
       - Implement WithMocks(overrides ...any) constructing an Orchestration with stub dependencies
       - Implement NewTestContext(method, path) returning an httptest.ResponseRecorder and gin.Context wired to it
       - Implement WithRequestCookie(c, name, value), StateCookieValue(w), and SessionCookieValue(w) test helpers in backend/internal/auth
-    passing: false
+    passing: true
 
   - slug: auth-login
     description: Login handler — generates state, sets cookie, redirects to OIDC authorization URL
