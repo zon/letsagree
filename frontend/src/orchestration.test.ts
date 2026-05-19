@@ -8,6 +8,7 @@ import {
   homePage,
   loginPage,
   logout,
+  notHumanPage,
   PageResponse,
 } from "./orchestration"
 import { sessions, users, backend } from "./backend"
@@ -207,5 +208,21 @@ describe("loginPage", () => {
     const response = loginPage(sessions.any())
     expect(response.type).toBe("redirect")
     expect(response.to).toBe("/")
+  })
+})
+
+describe("notHumanPage", () => {
+  test("not human page renders biometric error", () => {
+    const response = notHumanPage()
+    assertRendersNotHuman(response)
+  })
+})
+
+describe("Non-human user sees biometric error", () => {
+  test("GIVEN the backend returned 403 Forbidden during the OIDC callback WHEN the browser follows the redirect to GET /not-human THEN an error page is displayed indicating that biometric verification via Humanity Protocol is required", () => {
+    const response = notHumanPage()
+    expect(response.type).toBe("html")
+    expect(response.content).toContain("Biometric verification required")
+    expect(response.content).toContain("Humanity Protocol")
   })
 })

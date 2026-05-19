@@ -163,7 +163,7 @@ requirements:
                 const response = notHumanPage()
                 assertRendersNotHuman(response)
             })
-      passing: false
+      passing: true
     - slug: logout
       description: logout handler — calls the backend logout endpoint and redirects to the login page
       scenarios:
