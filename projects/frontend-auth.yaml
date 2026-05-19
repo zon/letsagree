@@ -204,4 +204,4 @@ requirements:
       description: Bump version for the frontend auth feature release
       items:
         - Bump VERSION and helm/Chart.yaml appVersion by a minor increment; bump helm/Chart.yaml version by a patch increment
-      passing: false
+      passing: true
