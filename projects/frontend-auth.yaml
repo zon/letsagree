@@ -1,218 +1,207 @@
 slug: frontend-auth
 title: frontend auth — login, session gating, and logout via Humanity Protocol
-
 feature: specs/features/frontend/auth
-
 requirements:
-  - slug: backend-client
-    description: User type, fetchUser and logout functions, and test helpers in frontend/src/backend.ts
-    items:
-      - Define User as an exported type in frontend/src/backend.ts
-      - Implement fetchUser(backendUrl, session) fetching the authenticated user from the backend; pass session as a Cookie header; return null on 401 or network error
-      - Implement logout(backendUrl, session) sending POST /auth/logout to the backend with the session value as a Cookie header
-      - Export sessions.any() returning a non-empty session cookie string
-      - Export sessions.absent() returning null
-      - Export users.any() returning a User with arbitrary but valid fields
-      - Export backend.findingUser(user) returning a fetchUser stub that resolves to user
-      - Export backend.userNotFound() returning a fetchUser stub that resolves to null
-      - Export backend.thatLogsOut() returning a doLogout stub that resolves without error
-    passing: false
-
-  - slug: render-pages
-    description: HTML render functions for the home, login, and not-human pages in frontend/src/render.ts
-    items:
-      - Implement renderHome(user) returning an HTML string for the authenticated home page; include a logout form that POSTs to /logout
-      - Implement renderLogin() returning an HTML string with a "Login with Humanity Protocol" button that links to the backend GET /auth/login endpoint
-      - Implement renderNotHuman() returning an HTML string indicating that biometric verification via Humanity Protocol is required
-    passing: false
-
-  - slug: orchestration-core
-    description: PageResponse union type and assertion helpers used across all orchestration tests
-    code:
-      - name: PageResponse
-        description: union type returned by all route handlers to indicate either HTML content or a redirect target
-        module: frontend/src/orchestration.ts
-        body: |
-          type PageResponse =
-              | { type: "html"; content: string }
-              | { type: "redirect"; to: string }
-    items:
-      - Implement assertRedirectsTo(response, path) asserting response.type === "redirect" and response.to === path
-      - Implement assertRendersHome(response, user) asserting response.type === "html" and content includes home page markers for user
-      - Implement assertRendersLogin(response) asserting response.type === "html" and content includes the login page marker
-      - Implement assertRendersNotHuman(response) asserting response.type === "html" and content includes the biometric error marker
-    passing: false
-
-  - slug: home-page
-    description: homePage handler — gates the authenticated home page on a valid session, redirects to login otherwise
-    scenarios:
-      - title: Unauthenticated user visits home page
-        items:
-          - GIVEN a user has no session cookie
-          - WHEN the user navigates to GET /
-          - THEN the frontend redirects to GET /login
-      - title: Successful login lands on home page
-        items:
-          - GIVEN the OIDC flow completed and the backend set a session cookie
-          - WHEN the backend redirects the browser to GET /
-          - THEN the home page is displayed
-          - AND a logout button is visible
-    code:
-      - name: homePage
-        description: redirects to login when session is absent or invalid; renders the home page for authenticated users
-        module: frontend/src/orchestration.ts
-        body: |
-          async function homePage(
-              session: string | null,
-              fetchUser: () => Promise<User | null>,
-          ): Promise<PageResponse> {
-              if (!session) return { type: "redirect", to: "/login" }
-              const user = await fetchUser()
-              if (!user) return { type: "redirect", to: "/login" }
-              return { type: "html", content: renderHome(user) }
-          }
-    tests:
-      - name: "home page redirects to login when session cookie is absent"
-        description: verifies homePage redirects to /login when no session cookie is present
-        module: frontend/src/orchestration.ts
-        body: |
-          test("home page redirects to login when session cookie is absent", async () => {
-              const response = await homePage(sessions.absent(), backend.userNotFound())
-              assertRedirectsTo(response, "/login")
-          })
-      - name: "home page redirects to login when session is invalid"
-        description: verifies homePage redirects to /login when the session cookie is present but the backend returns no user
-        module: frontend/src/orchestration.ts
-        body: |
-          test("home page redirects to login when session is invalid", async () => {
-              const response = await homePage(sessions.any(), backend.userNotFound())
-              assertRedirectsTo(response, "/login")
-          })
-      - name: "home page renders for authenticated user"
-        description: verifies homePage renders the home page when the session is valid and the backend returns a user
-        module: frontend/src/orchestration.ts
-        body: |
-          test("home page renders for authenticated user", async () => {
-              const user = users.any()
-              const response = await homePage(sessions.any(), backend.findingUser(user))
-              assertRendersHome(response, user)
-          })
-    passing: false
-
-  - slug: login-page
-    description: loginPage handler — renders login for unauthenticated users, redirects authenticated users to home
-    scenarios:
-      - title: Login page renders for unauthenticated user
-        items:
-          - GIVEN a user has no session cookie
-          - WHEN the user navigates to GET /login
-          - THEN the login page is displayed with a "Login with Humanity Protocol" button
-      - title: Login button initiates OIDC flow
-        items:
-          - GIVEN the user is on the login page
-          - WHEN the user clicks the login button
-          - THEN the browser is redirected to the backend GET /auth/login endpoint
-      - title: Authenticated user is redirected away from login
-        items:
-          - GIVEN a user has a valid session cookie
-          - WHEN the user navigates to GET /login
-          - THEN the frontend redirects to GET /
-    code:
-      - name: loginPage
-        description: redirects authenticated users to home; renders the login page for unauthenticated users
-        module: frontend/src/orchestration.ts
-        body: |
-          function loginPage(session: string | null): PageResponse {
-              if (session) return { type: "redirect", to: "/" }
-              return { type: "html", content: renderLogin() }
-          }
-    tests:
-      - name: "login page renders when no session cookie"
-        description: verifies loginPage returns HTML containing the login page when no session cookie is present
-        module: frontend/src/orchestration.ts
-        body: |
-          test("login page renders when no session cookie", () => {
-              const response = loginPage(sessions.absent())
-              assertRendersLogin(response)
-          })
-      - name: "login page redirects authenticated user to home"
-        description: verifies loginPage redirects to / when a session cookie is present
-        module: frontend/src/orchestration.ts
-        body: |
-          test("login page redirects authenticated user to home", () => {
-              const response = loginPage(sessions.any())
-              assertRedirectsTo(response, "/")
-          })
-    passing: false
-
-  - slug: not-human-page
-    description: notHumanPage handler — renders the biometric verification error page
-    scenarios:
-      - title: Non-human user sees biometric error
-        items:
-          - GIVEN the backend returned 403 Forbidden during the OIDC callback
-          - WHEN the browser follows the redirect to GET /not-human
-          - THEN an error page is displayed indicating that biometric verification via Humanity Protocol is required
-    code:
-      - name: notHumanPage
-        description: renders the biometric verification error page
-        module: frontend/src/orchestration.ts
-        body: |
-          function notHumanPage(): PageResponse {
-              return { type: "html", content: renderNotHuman() }
-          }
-    tests:
-      - name: "not human page renders biometric error"
-        description: verifies notHumanPage returns HTML containing the biometric error content
-        module: frontend/src/orchestration.ts
-        body: |
-          test("not human page renders biometric error", () => {
-              const response = notHumanPage()
-              assertRendersNotHuman(response)
-          })
-    passing: false
-
-  - slug: logout
-    description: logout handler — calls the backend logout endpoint and redirects to the login page
-    scenarios:
-      - title: Logout clears session and returns to login
-        items:
-          - GIVEN the user is authenticated and on the home page
-          - WHEN the user clicks the logout button
-          - THEN POST /auth/logout is sent to the backend
-          - AND the frontend redirects to GET /login
-    code:
-      - name: logout
-        description: calls doLogout to clear the backend session, then redirects to the login page
-        module: frontend/src/orchestration.ts
-        body: |
-          async function logout(doLogout: () => Promise<void>): Promise<PageResponse> {
-              await doLogout()
-              return { type: "redirect", to: "/login" }
-          }
-    tests:
-      - name: "logout redirects to login"
-        description: verifies logout redirects to /login after the backend session is cleared
-        module: frontend/src/orchestration.ts
-        body: |
-          test("logout redirects to login", async () => {
-              const response = await logout(backend.thatLogsOut())
-              assertRedirectsTo(response, "/login")
-          })
-    passing: false
-
-  - slug: server-wiring
-    description: Register the four auth routes and wire session cookie and backend client into each handler in frontend/src/index.ts
-    items:
-      - Register GET / calling homePage; read the session cookie from the Elysia context; inject backend.fetchUser bound to the backend URL and session; translate PageResponse to an HTML response or redirect
-      - Register GET /login calling loginPage; read the session cookie from the Elysia context; translate PageResponse to an HTML response or redirect
-      - Register GET /not-human calling notHumanPage; translate PageResponse to an HTML response
-      - Register POST /logout calling logout; read the session cookie from the Elysia context and inject backend.logout bound to the backend URL and session; translate PageResponse to a redirect response
-    passing: false
-
-  - slug: version-bump
-    description: Bump version for the frontend auth feature release
-    version: minor
-    items:
-      - Bump VERSION and helm/Chart.yaml appVersion by a minor increment; bump helm/Chart.yaml version by a patch increment
-    passing: false
+    - slug: backend-client
+      description: User type, fetchUser and logout functions, and test helpers in frontend/src/backend.ts
+      items:
+        - Define User as an exported type in frontend/src/backend.ts
+        - Implement fetchUser(backendUrl, session) fetching the authenticated user from the backend; pass session as a Cookie header; return null on 401 or network error
+        - Implement logout(backendUrl, session) sending POST /auth/logout to the backend with the session value as a Cookie header
+        - Export sessions.any() returning a non-empty session cookie string
+        - Export sessions.absent() returning null
+        - Export users.any() returning a User with arbitrary but valid fields
+        - Export backend.findingUser(user) returning a fetchUser stub that resolves to user
+        - Export backend.userNotFound() returning a fetchUser stub that resolves to null
+        - Export backend.thatLogsOut() returning a doLogout stub that resolves without error
+      passing: true
+    - slug: render-pages
+      description: HTML render functions for the home, login, and not-human pages in frontend/src/render.ts
+      items:
+        - Implement renderHome(user) returning an HTML string for the authenticated home page; include a logout form that POSTs to /logout
+        - Implement renderLogin() returning an HTML string with a "Login with Humanity Protocol" button that links to the backend GET /auth/login endpoint
+        - Implement renderNotHuman() returning an HTML string indicating that biometric verification via Humanity Protocol is required
+      passing: true
+    - slug: orchestration-core
+      description: PageResponse union type and assertion helpers used across all orchestration tests
+      items:
+        - Implement assertRedirectsTo(response, path) asserting response.type === "redirect" and response.to === path
+        - Implement assertRendersHome(response, user) asserting response.type === "html" and content includes home page markers for user
+        - Implement assertRendersLogin(response) asserting response.type === "html" and content includes the login page marker
+        - Implement assertRendersNotHuman(response) asserting response.type === "html" and content includes the biometric error marker
+      code:
+        - name: PageResponse
+          description: union type returned by all route handlers to indicate either HTML content or a redirect target
+          module: frontend/src/orchestration.ts
+          body: |
+            type PageResponse =
+                | { type: "html"; content: string }
+                | { type: "redirect"; to: string }
+      passing: true
+    - slug: home-page
+      description: homePage handler — gates the authenticated home page on a valid session, redirects to login otherwise
+      scenarios:
+        - title: Unauthenticated user visits home page
+          items:
+            - GIVEN a user has no session cookie
+            - WHEN the user navigates to GET /
+            - THEN the frontend redirects to GET /login
+        - title: Successful login lands on home page
+          items:
+            - GIVEN the OIDC flow completed and the backend set a session cookie
+            - WHEN the backend redirects the browser to GET /
+            - THEN the home page is displayed
+            - AND a logout button is visible
+      code:
+        - name: homePage
+          description: redirects to login when session is absent or invalid; renders the home page for authenticated users
+          module: frontend/src/orchestration.ts
+          body: |
+            async function homePage(
+                session: string | null,
+                fetchUser: () => Promise<User | null>,
+            ): Promise<PageResponse> {
+                if (!session) return { type: "redirect", to: "/login" }
+                const user = await fetchUser()
+                if (!user) return { type: "redirect", to: "/login" }
+                return { type: "html", content: renderHome(user) }
+            }
+      tests:
+        - name: home page redirects to login when session cookie is absent
+          description: verifies homePage redirects to /login when no session cookie is present
+          module: frontend/src/orchestration.ts
+          body: |
+            test("home page redirects to login when session cookie is absent", async () => {
+                const response = await homePage(sessions.absent(), backend.userNotFound())
+                assertRedirectsTo(response, "/login")
+            })
+        - name: home page redirects to login when session is invalid
+          description: verifies homePage redirects to /login when the session cookie is present but the backend returns no user
+          module: frontend/src/orchestration.ts
+          body: |
+            test("home page redirects to login when session is invalid", async () => {
+                const response = await homePage(sessions.any(), backend.userNotFound())
+                assertRedirectsTo(response, "/login")
+            })
+        - name: home page renders for authenticated user
+          description: verifies homePage renders the home page when the session is valid and the backend returns a user
+          module: frontend/src/orchestration.ts
+          body: |
+            test("home page renders for authenticated user", async () => {
+                const user = users.any()
+                const response = await homePage(sessions.any(), backend.findingUser(user))
+                assertRendersHome(response, user)
+              })
+      passing: true
+    - slug: login-page
+      description: loginPage handler — renders login for unauthenticated users, redirects authenticated users to home
+      scenarios:
+        - title: Login page renders for unauthenticated user
+          items:
+            - GIVEN a user has no session cookie
+            - WHEN the user navigates to GET /login
+            - THEN the login page is displayed with a "Login with Humanity Protocol" button
+        - title: Login button initiates OIDC flow
+          items:
+            - GIVEN the user is on the login page
+            - WHEN the user clicks the login button
+            - THEN the browser is redirected to the backend GET /auth/login endpoint
+        - title: Authenticated user is redirected away from login
+          items:
+            - GIVEN a user has a valid session cookie
+            - WHEN the user navigates to GET /login
+            - THEN the frontend redirects to GET /
+      code:
+        - name: loginPage
+          description: redirects authenticated users to home; renders the login page for unauthenticated users
+          module: frontend/src/orchestration.ts
+          body: |
+            function loginPage(session: string | null): PageResponse {
+                if (session) return { type: "redirect", to: "/" }
+                return { type: "html", content: renderLogin() }
+            }
+      tests:
+        - name: login page renders when no session cookie
+          description: verifies loginPage returns HTML containing the login page when no session cookie is present
+          module: frontend/src/orchestration.ts
+          body: |
+            test("login page renders when no session cookie", () => {
+                const response = loginPage(sessions.absent())
+                assertRendersLogin(response)
+            })
+        - name: login page redirects authenticated user to home
+          description: verifies loginPage redirects to / when a session cookie is present
+          module: frontend/src/orchestration.ts
+          body: |
+            test("login page redirects authenticated user to home", () => {
+                const response = loginPage(sessions.any())
+                assertRedirectsTo(response, "/")
+            })
+      passing: true
+    - slug: not-human-page
+      description: notHumanPage handler — renders the biometric verification error page
+      scenarios:
+        - title: Non-human user sees biometric error
+          items:
+            - GIVEN the backend returned 403 Forbidden during the OIDC callback
+            - WHEN the browser follows the redirect to GET /not-human
+            - THEN an error page is displayed indicating that biometric verification via Humanity Protocol is required
+      code:
+        - name: notHumanPage
+          description: renders the biometric verification error page
+          module: frontend/src/orchestration.ts
+          body: |
+            function notHumanPage(): PageResponse {
+                return { type: "html", content: renderNotHuman() }
+            }
+      tests:
+        - name: not human page renders biometric error
+          description: verifies notHumanPage returns HTML containing the biometric error content
+          module: frontend/src/orchestration.ts
+          body: |
+            test("not human page renders biometric error", () => {
+                const response = notHumanPage()
+                assertRendersNotHuman(response)
+            })
+      passing: true
+    - slug: logout
+      description: logout handler — calls the backend logout endpoint and redirects to the login page
+      scenarios:
+        - title: Logout clears session and returns to login
+          items:
+            - GIVEN the user is authenticated and on the home page
+            - WHEN the user clicks the logout button
+            - THEN POST /auth/logout is sent to the backend
+            - AND the frontend redirects to GET /login
+      code:
+        - name: logout
+          description: calls doLogout to clear the backend session, then redirects to the login page
+          module: frontend/src/orchestration.ts
+          body: |
+            async function logout(doLogout: () => Promise<void>): Promise<PageResponse> {
+                await doLogout()
+                return { type: "redirect", to: "/login" }
+            }
+      tests:
+        - name: logout redirects to login
+          description: verifies logout redirects to /login after the backend session is cleared
+          module: frontend/src/orchestration.ts
+          body: |
+            test("logout redirects to login", async () => {
+                const response = await logout(backend.thatLogsOut())
+                assertRedirectsTo(response, "/login")
+            })
+      passing: true
+    - slug: server-wiring
+      description: Register the four auth routes and wire session cookie and backend client into each handler in frontend/src/index.ts
+      items:
+        - Register GET / calling homePage; read the session cookie from the Elysia context; inject backend.fetchUser bound to the backend URL and session; translate PageResponse to an HTML response or redirect
+        - Register GET /login calling loginPage; read the session cookie from the Elysia context; translate PageResponse to an HTML response or redirect
+        - Register GET /not-human calling notHumanPage; translate PageResponse to an HTML response
+        - Register POST /logout calling logout; read the session cookie from the Elysia context and inject backend.logout bound to the backend URL and session; translate PageResponse to a redirect response
+      passing: true
+    - slug: version-bump
+      description: Bump version for the frontend auth feature release
+      items:
+        - Bump VERSION and helm/Chart.yaml appVersion by a minor increment; bump helm/Chart.yaml version by a patch increment
+      passing: true

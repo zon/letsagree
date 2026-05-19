@@ -36,20 +36,18 @@ func RegisterRoutes(r *gin.Engine, o *auth.Orchestration) {
 func main() {
 	kong.Parse(&cli)
 
-	cfg, err := oidc.LoadConfig(cli.ConfigDir + "/humanity-protocol.yaml")
-	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
-	}
-
 	ctx := context.Background()
 	var provider auth.OIDCProvider
-	if cfg.IssuerURL != "" {
+
+	cfg, err := oidc.LoadConfig(cli.ConfigDir + "/humanity-protocol.yaml")
+	if err == nil && cfg.IssuerURL != "" {
 		realProvider, err := oidc.NewProvider(ctx, cfg)
 		if err != nil {
 			log.Fatalf("failed to create OIDC provider: %v", err)
 		}
 		provider = realProvider
 	} else {
+		log.Printf("warning: could not load OIDC config, using stub provider: %v", err)
 		provider = oidc.NewStubProvider(oidc.AnyIDToken())
 	}
 
