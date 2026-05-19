@@ -199,7 +199,7 @@ requirements:
         - Register GET /login calling loginPage; read the session cookie from the Elysia context; translate PageResponse to an HTML response or redirect
         - Register GET /not-human calling notHumanPage; translate PageResponse to an HTML response
         - Register POST /logout calling logout; read the session cookie from the Elysia context and inject backend.logout bound to the backend URL and session; translate PageResponse to a redirect response
-      passing: false
+      passing: true
     - slug: version-bump
       description: Bump version for the frontend auth feature release
       items:
