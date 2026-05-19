@@ -6,6 +6,7 @@ import {
   assertRendersLogin,
   assertRendersNotHuman,
   homePage,
+  logout,
   PageResponse,
 } from "./orchestration"
 import { sessions, users, backend } from "./backend"
@@ -174,5 +175,12 @@ describe("GET /about when backend is unreachable", () => {
     const html = await aboutPage(backendUnavailable(), "1.0.0")
     assertContainsFrontendVersion(html, "1.0.0")
     assertBackendVersionUnavailable(html)
+  })
+})
+
+describe("logout", () => {
+  test("logout redirects to login", async () => {
+    const response = await logout(backend.thatLogsOut())
+    assertRedirectsTo(response, "/login")
   })
 })

@@ -61,3 +61,8 @@ export async function homePage(
 	if (!user) return { type: "redirect", to: "/login" }
 	return { type: "html", content: renderHome(user) }
 }
+
+export async function logout(doLogout: () => Promise<void>): Promise<PageResponse> {
+	await doLogout()
+	return { type: "redirect", to: "/login" }
+}
