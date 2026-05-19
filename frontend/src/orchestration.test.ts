@@ -6,6 +6,7 @@ import {
   assertRendersLogin,
   assertRendersNotHuman,
   homePage,
+  loginPage,
   logout,
   PageResponse,
 } from "./orchestration"
@@ -182,5 +183,29 @@ describe("logout", () => {
   test("logout redirects to login", async () => {
     const response = await logout(backend.thatLogsOut())
     assertRedirectsTo(response, "/login")
+  })
+})
+
+describe("loginPage", () => {
+  test("login page renders when no session cookie", () => {
+    const response = loginPage(sessions.absent())
+    assertRendersLogin(response)
+  })
+
+  test("login page redirects authenticated user to home", () => {
+    const response = loginPage(sessions.any())
+    assertRedirectsTo(response, "/")
+  })
+
+  test("Login page renders for unauthenticated user", () => {
+    const response = loginPage(sessions.absent())
+    expect(response.type).toBe("html")
+    expect(response.content).toContain("Login with Humanity Protocol")
+  })
+
+  test("Authenticated user is redirected away from login", () => {
+    const response = loginPage(sessions.any())
+    expect(response.type).toBe("redirect")
+    expect(response.to).toBe("/")
   })
 })

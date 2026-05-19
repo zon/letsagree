@@ -137,7 +137,7 @@ requirements:
                 const response = loginPage(sessions.any())
                 assertRedirectsTo(response, "/")
             })
-      passing: false
+      passing: true
     - slug: not-human-page
       description: notHumanPage handler — renders the biometric verification error page
       scenarios:

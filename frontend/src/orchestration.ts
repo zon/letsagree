@@ -1,4 +1,4 @@
-import { renderAbout, renderHome } from "./render.js"
+import { renderAbout, renderHome, renderLogin } from "./render.js"
 import type { User } from "./backend.js"
 
 export type PageResponse =
@@ -65,4 +65,9 @@ export async function homePage(
 export async function logout(doLogout: () => Promise<void>): Promise<PageResponse> {
 	await doLogout()
 	return { type: "redirect", to: "/login" }
+}
+
+export function loginPage(session: string | null): PageResponse {
+	if (session) return { type: "redirect", to: "/" }
+	return { type: "html", content: renderLogin() }
 }
